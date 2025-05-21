@@ -441,6 +441,19 @@
             color: #666;
         }
         
+        .course-date {
+            margin-top: 1rem;
+            color: var(--primary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .course-date i {
+            font-size: 1.1rem;
+        }
+        
         /* 費用區塊 */
         .pricing {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -628,7 +641,7 @@
         /* 表單相關樣式 */
         .form-container {
             background: white;
-            max-width: 800px;
+            width: 100%;
             margin: 0 auto;
             padding: 3rem;
             border-radius: 10px;
@@ -637,6 +650,8 @@
         
         .google-form-container {
             width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
         .form-heading {
@@ -978,6 +993,25 @@
         .animate {
             animation: fadeInUp 0.6s ease-out forwards;
         }
+        
+        .registration-process-image {
+            width: 100%;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .registration-process-image img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .image-caption {
+            margin-top: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -1024,14 +1058,14 @@
             </div>
             <div class="about-content">
                 <div class="about-text animate">
-                    <p>🚀 告別傳統才藝班，迎接孩子的「AI創意無限營：解鎖未來技能」！ 🚀</p>
-                    <p>各位走在時代尖端的爸媽們，您是否也在尋找能真正啟發孩子潛能、接軌未來的學習機會？別再猶豫！「AI創意無限營」就是您孩子夢想啟航的魔法列車！</p>
-                    <p>我們深知，未來的世界屬於充滿創意與科技力的下一代。因此，我們精心打造一系列結合時下最夯的生成式AI技術的營隊，讓您的孩子不再只是被動學習，而是化身小小作家、藝術家、遊戲設計師、音樂製作人，甚至是網站架站高手！</p>
-                    <p>🎨 揮灑無限創意，AI就是神隊友！ ✍️</p>
-                    <p>想像一下，孩子們能用文字召喚出奇幻世界的小說、用簡單指令繪製出獨一無二的畫作、用AI譜寫出屬於自己的動人樂章… 這不再是遙不可及的夢想！在「AI創意無限營」中，我們將引導孩子們輕鬆駕馭AI工具，將腦海中的無限想像力轉化為具體作品，激發他們與生俱來的創造天賦！</p>
+                    <p style="font-size: 1.2rem; margin-bottom: 1.5rem; line-height: 1.8;">🚀 告別傳統才藝班，迎接孩子的「AI創意無限營：解鎖未來技能」！ 🚀</p>
+                    <p style="font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.8;">各位走在時代尖端的爸媽們，您是否也在尋找能真正啟發孩子潛能、接軌未來的學習機會？別再猶豫！「AI創意無限營」就是您孩子夢想啟航的魔法列車！</p>
+                    <p style="font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.8;">我們深知，未來的世界屬於充滿創意與科技力的下一代。因此，我們精心打造一系列結合時下最夯的生成式AI技術的營隊，讓您的孩子不再只是被動學習，而是化身小小作家、藝術家、遊戲設計師、音樂製作人，甚至是網站架站高手！</p>
+                    <p style="font-size: 1.2rem; margin-bottom: 1.5rem; line-height: 1.8;">🎨 揮灑無限創意，AI就是神隊友！ ✍️</p>
+                    <p style="font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.8;">想像一下，孩子們能用文字召喚出奇幻世界的小說、用簡單指令繪製出獨一無二的畫作、用AI譜寫出屬於自己的動人樂章… 這不再是遙不可及的夢想！在「AI創意無限營」中，我們將引導孩子們輕鬆駕馭AI工具，將腦海中的無限想像力轉化為具體作品，激發他們與生俱來的創造天賦！</p>
                 </div>
                 <div class="about-image animate">
-                    <img src="/api/placeholder/500/350" alt="孩子們在互動式AI創作教室中，展示他們的作品，充滿驚奇和創意的表情" />
+                    <img src="/images/core-image.png" alt="孩子們在互動式AI創作教室中，展示他們的作品，充滿驚奇和創意的表情" />
                 </div>
             </div>
         </div>
@@ -1056,7 +1090,7 @@
                         <i class="fas fa-chalkboard-teacher"></i>
                     </div>
                     <h3 class="feature-title">專業認證師資</h3>
-                    <p>由AI領域專業認證師資親自帶領，結合教育專業與科技創新，帶給孩子最優質的學習體驗。</p>
+                    <p>由專業師資親自帶領，結合教育專業與科技創新，帶給孩子最優質的學習體驗。</p>
                 </div>
                 <div class="feature-card animate">
                     <div class="feature-icon">
@@ -1085,56 +1119,92 @@
             <div class="courses-grid">
                 <div class="course-card animate">
                     <div class="course-image">
-                        <img src="/api/placeholder/400/200" alt="孩子使用AI輔助寫作，創作自己的小說故事情境" />
+                        <img src="/images/2025/Week-1.png" alt="孩子使用AI輔助設計網頁，展現創意的情境" />
                     </div>
                     <div class="course-content">
-                        <h3 class="course-title">妙筆生花【AI小說夢工廠】</h3>
-                        <p class="course-desc">讓孩子運用AI工具創作屬於自己的奇幻故事，培養寫作能力與文學素養，啟發無限想像力。</p>
+                        <h3 class="course-title">AI網頁製作超能力</h3>
+                        <p class="course-desc">引導孩子們運用AI技術快速架設獨具風格的網站！學習網頁設計基礎，並結合AI工具輔助生成網頁結構、內容與樣式。</p>
+                        <p class="course-date"><i class="fas fa-calendar"></i> 第一梯次：7/1～7/4（4天）</p>
                     </div>
                 </div>
                 <div class="course-card animate">
                     <div class="course-image">
-                        <img src="/api/placeholder/400/200" alt="孩子使用AI繪圖工具創作精美插畫的情境" />
+                        <img src="/images/2025/Week-2.png" alt="孩子使用AI輔助寫作，創作自己的小說故事情境" />
                     </div>
                     <div class="course-content">
-                        <h3 class="course-title">點石成金【AI繪圖超能力】</h3>
-                        <p class="course-desc">透過AI繪圖工具，將孩子的創意想法轉化為精美插畫，無需繪畫基礎，人人都能成為小小藝術家。</p>
+                        <h3 class="course-title">AI小說夢工廠</h3>
+                        <p class="course-desc">深入淺出地講解小說基礎，並搭配有趣的AI工具，激發孩子的創意火花，在玩樂中學會角色塑造、情節構思。</p>
+                        <p class="course-date"><i class="fas fa-calendar"></i> 第二梯次：7/7～7/11（5天）</p>
                     </div>
                 </div>
                 <div class="course-card animate">
                     <div class="course-image">
-                        <img src="/api/placeholder/400/200" alt="孩子正在創作自己的AI繪本，色彩豐富且充滿童趣的場景" />
+                        <img src="/images/2025/Week-3.png" alt="孩子使用AI繪圖工具創作精美插畫的情境" />
                     </div>
                     <div class="course-content">
-                        <h3 class="course-title">童心繪意【AI繪本奇遇記】</h3>
-                        <p class="course-desc">指導孩子利用AI技術創作屬於自己的繪本故事，從構思、繪圖到排版，完整體驗出版創作的樂趣。</p>
+                        <h3 class="course-title">AI繪圖超能力</h3>
+                        <p class="course-desc">深入淺出地介紹圖像設計基礎，並運用有趣的AI工具，透過文字就能生成獨特的視覺作品，更能隨心所欲編輯修改。</p>
+                        <p class="course-date"><i class="fas fa-calendar"></i> 第三梯次：7/14～7/18（5天）</p>
                     </div>
                 </div>
                 <div class="course-card animate">
                     <div class="course-image">
-                        <img src="/api/placeholder/400/200" alt="孩子們正在使用AI工具製作簡單動畫，畫面上有多個角色和場景設計" />
+                        <img src="/images/2025/Week-4.png" alt="孩子正在創作自己的AI繪本，色彩豐富且充滿童趣的場景" />
                     </div>
                     <div class="course-content">
-                        <h3 class="course-title">躍然眼前【動畫製作AI攻略】</h3>
-                        <p class="course-desc">讓孩子輕鬆學會使用AI動畫工具，製作簡單有趣的動畫短片，培養視覺敘事能力。</p>
+                        <h3 class="course-title">AI繪本奇遇記</h3>
+                        <p class="course-desc">引導孩子構思故事情節、設計可愛角色，並運用AI輕鬆生成獨特的繪圖風格，共同打造一本充滿想像力的個人繪本！</p>
+                        <p class="course-date"><i class="fas fa-calendar"></i> 第四梯次：7/21～7/25（5天）</p>
                     </div>
                 </div>
                 <div class="course-card animate">
                     <div class="course-image">
-                        <img src="/api/placeholder/400/200" alt="孩子們戴著耳機，專注在電腦前創作音樂的場景，充滿音符元素" />
+                        <img src="/images/2025/Week-5.png" alt="孩子們戴著耳機，專注在電腦前創作音樂的場景，充滿音符元素" />
                     </div>
                     <div class="course-content">
-                        <h3 class="course-title">聲聲不息【AI音樂夢工廠】</h3>
-                        <p class="course-desc">透過AI音樂生成工具，即使沒有樂理基礎，也能創作出動人旋律，體驗音樂創作的無窮樂趣。</p>
+                        <h3 class="course-title">AI音樂夢工廠</h3>
+                        <p class="course-desc">深入淺出地介紹音樂基礎知識，並結合AI工具輔助旋律生成、節奏設計與樂器配置，輕鬆打造出獨一無二的個人音樂作品！</p>
+                        <p class="course-date"><i class="fas fa-calendar"></i> 第五梯次：7/28～8/1（5天）</p>
                     </div>
                 </div>
                 <div class="course-card animate">
                     <div class="course-image">
-                        <img src="/api/placeholder/400/200" alt="孩子使用AI輔助學習工具，在平板電腦上探索各種知識領域的畫面" />
+                        <img src="/images/2025/Week-6.png" alt="孩子們正在使用AI工具製作簡單動畫，畫面上有多個角色和場景設計" />
                     </div>
                     <div class="course-content">
-                        <h3 class="course-title">玩轉學習【AI智慧學習好幫手】</h3>
-                        <p class="course-desc">教導孩子如何運用AI工具輔助學習，提升學習效率，讓學習變得更有趣、更高效。</p>
+                        <h3 class="course-title">動畫製作AI攻略</h3>
+                        <p class="course-desc">深入淺出地講解動畫原理，並運用AI工具輔助角色設計、動態生成與場景構建，輕鬆創作出屬於自己的動態故事！</p>
+                        <p class="course-date"><i class="fas fa-calendar"></i> 第六梯次：8/4～8/8（5天）</p>
+                    </div>
+                </div>
+                <div class="course-card animate">
+                    <div class="course-image">
+                        <img src="/images/2025/Week-7.png" alt="孩子使用AI輔助學習工具，在平板電腦上探索各種知識領域的畫面" />
+                    </div>
+                    <div class="course-content">
+                        <h3 class="course-title">AI智慧學習好幫手</h3>
+                        <p class="course-desc">運用 Google 的智慧 AI 工具 NotebookLM，輕鬆分析大量文件、快速掌握重點、解答疑問，並激發更深層次的思考。</p>
+                        <p class="course-date"><i class="fas fa-calendar"></i> 第七梯次：8/11～8/15（5天）</p>
+                    </div>
+                </div>
+                <div class="course-card animate">
+                    <div class="course-image">
+                        <img src="/images/2025/Week-8.png" alt="孩子們正在設計和測試自己的網頁遊戲，充滿創意和樂趣的場景" />
+                    </div>
+                    <div class="course-content">
+                        <h3 class="course-title">AI輕鬆打造網頁小遊戲</h3>
+                        <p class="course-desc">學習遊戲設計基礎概念，並結合AI工具輔助生成遊戲素材、程式碼片段與互動邏輯，輕鬆打造出屬於自己的網頁遊戲！</p>
+                        <p class="course-date"><i class="fas fa-calendar"></i> 第八梯次：8/18～8/22（5天）</p>
+                    </div>
+                </div>
+                <div class="course-card animate">
+                    <div class="course-image">
+                        <img src="/images/2025/Week-9.png" alt="孩子們使用Canva AI工具創作設計作品，展現創意的場景" />
+                    </div>
+                    <div class="course-content">
+                        <h3 class="course-title">Canva AI創意爆發</h3>
+                        <p class="course-desc">學習設計基礎，並結合AI圖像生成、智能排版與文案撰寫等工具，讓孩子們快速實現設計想法，釋放無限創意潛能。</p>
+                        <p class="course-date"><i class="fas fa-calendar"></i> 第九梯次：8/25～8/29（5天）</p>
                     </div>
                 </div>
             </div>
@@ -1161,7 +1231,6 @@
                         <div class="pricing-feature-item">專業師資授課</div>
                         <div class="pricing-feature-item">小班制教學</div>
                         <div class="pricing-feature-item">課程教材費用全包</div>
-                        <div class="pricing-feature-item">營隊專屬紀念品</div>
                     </div>
                     <a href="#registration" class="pricing-btn">立即報名</a>
                 </div>
@@ -1178,7 +1247,6 @@
                         <div class="pricing-feature-item">專業師資授課</div>
                         <div class="pricing-feature-item">小班制教學</div>
                         <div class="pricing-feature-item">課程教材費用全包</div>
-                        <div class="pricing-feature-item">營隊專屬紀念品</div>
                     </div>
                     <a href="#registration" class="pricing-btn">立即報名</a>
                 </div>
@@ -1232,7 +1300,7 @@
                 </div>
                 
                 <div class="notices-highlight">
-                    <p><i class="fas fa-info-circle"></i> 提交報名表單後，請加 line ,搜尋 <strong>@dons</strong> 與我們確認報名成功後，將提供匯款資訊。</p>
+                    <p><i class="fas fa-info-circle"></i> 提交報名表單後，請加 line ，搜尋 <strong>@dons</strong> 與我們確認報名成功後，將提供匯款資訊。</p>
                     <p><i class="fas fa-info-circle"></i> 報名成功與否，依照匯款順序決定。如遇額滿，將協助選擇其他班級或者退費。</p>
                     <p><i class="fas fa-exclamation-triangle"></i> 因各營隊名額有限，請盡速匯款方能確保上課權益。</p>
                 </div>
@@ -1287,7 +1355,7 @@
                     </div>
                     
                     <div class="form-note">
-                        <p><i class="fa-solid fa-info-circle"></i> 如有任何疑問，請聯繫我們：<a href="tel:+886912345678">0912-345-678</a> 或 <a href="mailto:info@aicamp.tw">info@aicamp.tw</a></p>
+                        <p><i class="fa-solid fa-info-circle"></i> 如有任何疑問，請聯繫我們：<a href="tel:+886277420040">(02) 7742-0040</a></p>
                     </div>
                 </div>
             </div>
@@ -1302,19 +1370,17 @@
                     <div class="footer-logo"><i class="fas fa-robot"></i> AI創意無限營</div>
                     <p class="footer-desc">專為孩子打造的AI創意啟發營隊，培養未來科技人才，激發無限創意潛能！</p>
                     <div class="footer-social">
-                        <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
-                        <a href="#" class="social-icon"><i class="fab fa-line"></i></a>
+                        <a href="https://www.facebook.com/DONS.education/" target="_blank" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/dons.education/" target="_blank" class="social-icon"><i class="fab fa-instagram"></i></a>
+                        <a href="https://lin.ee/f7t7DtS" target="_blank" class="social-icon"><i class="fab fa-line"></i></a>
                     </div>
                 </div>
                 <div class="footer-column">
                     <h3 class="footer-heading">聯絡資訊</h3>
                     <ul class="footer-links">
-                        <li class="footer-link"><a href="tel:+886912345678"><i class="fas fa-phone"></i> 電話：0912-345-678</a></li>
-                        <li class="footer-link"><a href="mailto:info@aicamp.tw"><i class="fas fa-envelope"></i> Email：info@aicamp.tw</a></li>
-                        <li class="footer-link"><a href="#"><i class="fab fa-line"></i> LINE ID：@dons</a></li>
-                        <li class="footer-link"><a href="#"><i class="fas fa-map-marker-alt"></i> 地址：新北市板橋區文化路一段111號</a></li>
+                        <li class="footer-link"><a href="tel:+886277420040"><i class="fas fa-phone"></i> 電話：(02) 7742-0040</a></li>
+                        <li class="footer-link"><a href="https://lin.ee/f7t7DtS" target="_blank"><i class="fab fa-line"></i> LINE ID：@dons</a></li>
+                        <li class="footer-link"><a href="#"><i class="fas fa-map-marker-alt"></i> 地址：新北市淡水區濱海路二段218號一樓</a></li>
                     </ul>
                 </div>
                 <div class="footer-column">
