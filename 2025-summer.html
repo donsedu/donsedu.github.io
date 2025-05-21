@@ -1,4 +1,4 @@
-.<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -52,6 +52,57 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .mobile-cta {
+            display: none;
+        }
+        
+        @media (max-width: 992px) {
+            .navbar {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.8rem 1rem;
+            }
+            .navbar-left {
+                flex-direction: row;
+                align-items: center;
+                gap: 0.5rem;
+                flex: 1;
+            }
+            .navbar-right {
+                flex-direction: row;
+                align-items: center;
+                gap: 0.5rem;
+                flex-shrink: 0;
+            }
+            .mobile-cta {
+                display: block;
+                margin-left: 0.5rem;
+            }
+            .mobile-cta .cta-btn {
+                padding: 0.4rem 1rem;
+                font-size: 0.9rem;
+            }
+            .navbar-nav .cta-btn {
+                display: none;
+            }
+            .navbar-brand-text {
+                display: none;
+            }
         }
         
         .navbar-brand {
@@ -359,31 +410,45 @@
             transition: transform 0.3s, box-shadow 0.3s;
         }
         
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        .feature-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
         
         .feature-icon {
-            margin-bottom: 1.5rem;
-            width: 70px;
-            height: 70px;
-            background: rgba(75, 108, 255, 0.1);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(75, 108, 255, 0.2);
         }
         
         .feature-icon i {
-            font-size: 2rem;
-            color: var(--primary);
+            font-size: 2.5rem;
+            color: white;
         }
         
         .feature-title {
             font-size: 1.5rem;
-            margin-bottom: 1rem;
             color: var(--dark);
+            margin: 0;
+        }
+        
+        .feature-desc {
+            color: #666;
+            line-height: 1.6;
+            padding-left: 0.5rem;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
         }
         
         /* 課程規劃區塊 */
@@ -397,32 +462,51 @@
             gap: 2rem;
         }
         
-        .course-card {
-            background: var(--light);
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s;
-        }
-        
-        .course-card:hover {
-            transform: translateY(-10px);
-        }
-        
         .course-image {
             height: 200px;
             overflow: hidden;
+            position: relative;
         }
         
         .course-image img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.5s;
+            transition: all 0.5s ease;
         }
         
         .course-card:hover .course-image img {
             transform: scale(1.1);
+            filter: brightness(1.1);
+        }
+        
+        .course-image::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .course-card:hover .course-image::after {
+            opacity: 1;
+        }
+        
+        .course-card {
+            background: var(--light);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
         }
         
         .course-content {
@@ -1012,16 +1096,51 @@
             color: #666;
             font-size: 0.9rem;
         }
+        
+        @media (max-width: 992px) {
+            .countdown-container {
+                display: none;
+            }
+        }
+        
+        .countdown-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(75, 108, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+        }
+        .countdown-text {
+            color: #4b6cff;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .countdown-icon {
+            color: #4b6cff;
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>
     <!-- 導航欄 -->
     <nav class="navbar">
-        <a href="#" class="navbar-brand"><i class="fa-solid fa-robot"></i> AI創意無限營</a>
-        <div class="menu-toggle">
-            <span></span>
-            <span></span>
-            <span></span>
+        <div class="navbar-left">
+            <a href="#" class="navbar-brand"><i class="fa-solid fa-robot"></i><span class="navbar-brand-text"> AI創意無限營</span></a>
+            <div class="countdown-container">
+                <i class="fas fa-clock countdown-icon"></i>
+                <span class="countdown-text" id="countdown"></span>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <div class="mobile-cta">
+                <a href="#registration" class="cta-btn"><i class="fa-solid fa-user-plus"></i> 立即報名</a>
+            </div>
+            <div class="menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
         </div>
         <ul class="navbar-nav">
             <li class="nav-item"><a href="#about" class="nav-link"><i class="fa-solid fa-info-circle"></i> 營隊介紹</a></li>
@@ -1079,32 +1198,40 @@
             </div>
             <div class="features-grid">
                 <div class="feature-card animate">
-                    <div class="feature-icon">
-                        <i class="fas fa-users"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="feature-title">黃金比例小班制</h3>
                     </div>
-                    <h3 class="feature-title">黃金比例小班制</h3>
-                    <p>6-10人小班制教學，讓老師能充分關注每位小朋友的學習狀況，給予個別指導，確保學習成效。</p>
+                    <p class="feature-desc">6-10人小班制教學，讓老師能充分關注每位小朋友的學習狀況，給予個別指導，確保學習成效。</p>
                 </div>
                 <div class="feature-card animate">
-                    <div class="feature-icon">
-                        <i class="fas fa-chalkboard-teacher"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <h3 class="feature-title">專業認證師資</h3>
                     </div>
-                    <h3 class="feature-title">專業認證師資</h3>
-                    <p>由專業師資親自帶領，結合教育專業與科技創新，帶給孩子最優質的學習體驗。</p>
+                    <p class="feature-desc">由專業師資親自帶領，結合教育專業與科技創新，帶給孩子最優質的學習體驗。</p>
                 </div>
                 <div class="feature-card animate">
-                    <div class="feature-icon">
-                        <i class="fas fa-shield-alt"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 class="feature-title">安心學習環境</h3>
                     </div>
-                    <h3 class="feature-title">安心學習環境</h3>
-                    <p>每日專業消毒，保持環境清潔，為孩子打造安心的學習空間，讓家長放心、孩子開心。</p>
+                    <p class="feature-desc">每日專業消毒，保持環境清潔，為孩子打造安心的學習空間，讓家長放心、孩子開心。</p>
                 </div>
                 <div class="feature-card animate">
-                    <div class="feature-icon">
-                        <i class="fas fa-lightbulb"></i>
+                    <div class="feature-header">
+                        <div class="feature-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <h3 class="feature-title">每週獨特主題</h3>
                     </div>
-                    <h3 class="feature-title">每週獨特主題</h3>
-                    <p>課程設計多元豐富，每週不同主題，讓創意無限延伸，激發孩子各方面的潛能與興趣。</p>
+                    <p class="feature-desc">課程設計多元豐富，每週不同主題，讓創意無限延伸，激發孩子各方面的潛能與興趣。</p>
                 </div>
             </div>
         </div>
@@ -1405,6 +1532,32 @@
 
     <!-- JavaScript -->
     <script>
+        // 倒數計時器相關變數
+        const TARGET_DATE = new Date('2025-05-26T00:00:00');
+        
+        // 更新倒數計時器
+        function updateCountdown() {
+            const now = new Date();
+            const diff = TARGET_DATE - now;
+            
+            if (diff <= 0) {
+                document.getElementById('countdown').textContent = '早鳥優惠已結束';
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            document.getElementById('countdown').textContent = 
+                `早鳥優惠倒數：${days}天${hours}時${minutes}分${seconds}秒`;
+        }
+        
+        // 每秒更新一次倒數計時器
+        setInterval(updateCountdown, 1000);
+        updateCountdown(); // 立即執行一次
+        
         // 導航欄互動
         const menuToggle = document.querySelector('.menu-toggle');
         const navbarNav = document.querySelector('.navbar-nav');
