@@ -1,4 +1,4 @@
-        .<!DOCTYPE html>
+.<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -625,6 +625,7 @@
             background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
         }
         
+        /* 表單相關樣式 */
         .form-container {
             background: white;
             max-width: 800px;
@@ -634,77 +635,137 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
         
-        .form-group {
-            margin-bottom: 1.5rem;
+        .google-form-container {
+            width: 100%;
         }
         
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
+        .form-heading {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--dark);
             display: flex;
             align-items: center;
         }
         
-        .form-label i {
-            margin-right: 0.5rem;
-            color: var(--primary);
-            width: 20px;
-            text-align: center;
-        }
-        
-        .form-input,
-        .form-select,
-        .form-textarea {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-        
-        .form-input:focus,
-        .form-select:focus,
-        .form-textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(75, 108, 255, 0.2);
-            outline: none;
-        }
-        
-        .form-textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        .form-submit {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(75, 108, 255, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            max-width: 250px;
-            margin: 0 auto;
-        }
-        
-        .form-submit i {
+        .form-heading i {
             margin-right: 0.8rem;
+            color: var(--primary);
+        }
+        
+        .form-description {
+            margin-bottom: 2rem;
+            color: #555;
             font-size: 1.1rem;
         }
         
-        .form-submit:hover {
+        .google-form-button-container {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .google-form-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(75, 108, 255, 0.3);
+        }
+        
+        .google-form-button i {
+            margin-right: 0.8rem;
+        }
+        
+        .google-form-button:hover {
             background: #3a5ce4;
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(75, 108, 255, 0.4);
+            box-shadow: 0 8px 25px rgba(75, 108, 255, 0.4);
+        }
+        
+        .form-features {
+            margin: 3rem 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .form-feature-item {
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .form-feature-item i {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-right: 1rem;
+            margin-top: 0.2rem;
+        }
+        
+        .form-feature-text h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+        
+        .form-feature-text p {
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .form-note {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin-top: 2rem;
+        }
+        
+        .form-note p {
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-note i {
+            color: var(--primary);
+            margin-right: 0.5rem;
+        }
+        
+        .form-note a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+            margin-left: 0.3rem;
+        }
+        
+        .form-note a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 2rem 1.5rem;
+            }
+            
+            .form-heading {
+                font-size: 1.5rem;
+            }
+            
+            .form-features {
+                grid-template-columns: 1fr;
+            }
+            
+            .google-form-button {
+                width: 100%;
+                padding: 1rem 1.5rem;
+            }
         }
         
         /* 頁尾 */
@@ -1186,57 +1247,44 @@
                 <h2>立即報名</h2>
             </div>
             <div class="form-container">
-                <form id="registration-form">
-                    <div class="form-group">
-                        <label for="parent-name" class="form-label"><i class="fas fa-user"></i> 家長姓名</label>
-                        <input type="text" id="parent-name" class="form-input" required>
+                <div class="google-form-container">
+                    <h3 class="form-heading"><i class="fa-solid fa-paper-plane"></i> 立即報名</h3>
+                    <p class="form-description">請點擊下方按鈕前往Google表單，填寫完成報名資訊。填寫後，我們會盡快與您聯繫確認報名詳情。</p>
+                    
+                    <div class="google-form-button-container">
+                        <a href="https://forms.gle/3UFymH4M7dm5n7uPA" target="_blank" class="google-form-button">
+                            <i class="fa-solid fa-external-link-alt"></i> 前往報名表單
+                        </a>
                     </div>
-                    <div class="form-group">
-                        <label for="parent-phone" class="form-label"><i class="fas fa-phone"></i> 家長電話</label>
-                        <input type="tel" id="parent-phone" class="form-input" required>
+                    
+                    <div class="form-features">
+                        <div class="form-feature-item">
+                            <i class="fa-solid fa-check-circle"></i>
+                            <div class="form-feature-text">
+                                <h4>快速報名</h4>
+                                <p>只需填寫一份簡單的表單，即可完成報名手續</p>
+                            </div>
+                        </div>
+                        <div class="form-feature-item">
+                            <i class="fa-solid fa-envelope"></i>
+                            <div class="form-feature-text">
+                                <h4>即時確認</h4>
+                                <p>提交後您會收到自動確認郵件，我們也會進一步聯繫您</p>
+                            </div>
+                        </div>
+                        <div class="form-feature-item">
+                            <i class="fa-solid fa-shield-alt"></i>
+                            <div class="form-feature-text">
+                                <h4>資料安全</h4>
+                                <p>您的所有資料都受到Google安全協議保護</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="parent-email" class="form-label"><i class="fas fa-envelope"></i> 電子郵件</label>
-                        <input type="email" id="parent-email" class="form-input" required>
+                    
+                    <div class="form-note">
+                        <p><i class="fa-solid fa-info-circle"></i> 如有任何疑問，請聯繫我們：<a href="tel:+886912345678">0912-345-678</a> 或 <a href="mailto:info@aicamp.tw">info@aicamp.tw</a></p>
                     </div>
-                    <div class="form-group">
-                        <label for="child-name" class="form-label"><i class="fas fa-child"></i> 孩子姓名</label>
-                        <input type="text" id="child-name" class="form-input" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="child-age" class="form-label"><i class="fas fa-birthday-cake"></i> 孩子年齡</label>
-                        <input type="number" id="child-age" class="form-input" min="5" max="15" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="camp-type" class="form-label"><i class="fas fa-laptop-code"></i> 營隊選擇</label>
-                        <select id="camp-type" class="form-select" required>
-                            <option value="">請選擇營隊類型</option>
-                            <option value="novel">妙筆生花【AI小說夢工廠】</option>
-                            <option value="drawing">點石成金【AI繪圖超能力】</option>
-                            <option value="picture-book">童心繪意【AI繪本奇遇記】</option>
-                            <option value="animation">躍然眼前【動畫製作AI攻略】</option>
-                            <option value="music">聲聲不息【AI音樂夢工廠】</option>
-                            <option value="learning">玩轉學習【AI智慧學習好幫手】</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="camp-duration" class="form-label"><i class="fas fa-calendar-alt"></i> 營隊期間</label>
-                        <select id="camp-duration" class="form-select" required>
-                            <option value="">請選擇營隊期間</option>
-                            <option value="4days">四天半日營（7/1～7/4）</option>
-                            <option value="5days-1">五天半日營（第一梯次）</option>
-                            <option value="5days-2">五天半日營（第二梯次）</option>
-                            <option value="5days-3">五天半日營（第三梯次）</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="special-notes" class="form-label"><i class="fas fa-sticky-note"></i> 特殊需求備註（如：過敏、飲食限制等）</label>
-                        <textarea id="special-notes" class="form-textarea"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="form-submit"><i class="fas fa-paper-plane"></i> 提交報名</button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     </section>
@@ -1351,17 +1399,18 @@
             });
         });
         
-        // 表單提交處理
-        const form = document.getElementById('registration-form');
-        
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // 在這裡可以添加表單驗證和提交邏輯
-            alert('感謝您的報名！我們將盡快與您聯繫確認報名資訊。');
-            
-            // 重置表單
-            form.reset();
+        // 表單相關處理
+        document.addEventListener('DOMContentLoaded', function() {
+            // 報名按鈕點擊事件追蹤
+            const formButton = document.querySelector('.google-form-button');
+            if (formButton) {
+                formButton.addEventListener('click', function() {
+                    console.log('使用者點擊了報名按鈕');
+                    
+                    // 這裡可以添加GA或其他分析代碼來追蹤點擊事件
+                    // 例如: gtag('event', 'click', {'event_category': 'registration', 'event_label': 'form_button'});
+                });
+            }
         });
         
         // 動畫效果
