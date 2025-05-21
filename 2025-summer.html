@@ -1,0 +1,1389 @@
+        .<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025 AI創意無限營：解鎖未來技能</title>
+    <!-- Font Awesome 圖標 - 使用更可靠的CDN連結 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* 基本樣式設定 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: '微軟正黑體', sans-serif;
+        }
+        
+        :root {
+            --primary: #4b6cff;
+            --secondary: #ff6b8b;
+            --accent: #7c4dff;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --success: #28a745;
+        }
+        
+        body {
+            color: var(--dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        body.no-scroll {
+            overflow: hidden;
+        }
+        
+        /* 漸變背景 */
+        .gradient-bg {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+        
+        /* 導航欄樣式 */
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 0.8rem 2rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .navbar-brand i {
+            margin-right: 0.5rem;
+            font-size: 1.6rem;
+        }
+        
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-item {
+            margin-left: 1.5rem;
+        }
+        
+        .nav-link {
+            color: var(--dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-link i {
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary);
+            background-color: rgba(75, 108, 255, 0.1);
+        }
+        
+        .cta-btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .cta-btn:hover {
+            background-color: #3a5ce4;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(59, 92, 228, 0.2);
+        }
+        
+        /* 漢堡選單按鈕 */
+        .menu-toggle {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 30px;
+            height: 21px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+        
+        .menu-toggle span {
+            display: block;
+            height: 3px;
+            width: 100%;
+            background-color: var(--primary);
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        
+        /* 手機版導航欄 */
+        @media (max-width: 992px) {
+            .menu-toggle {
+                display: flex;
+            }
+            
+            .navbar-nav {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 70%;
+                max-width: 300px;
+                height: 100vh;
+                background-color: white;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+                padding: 80px 0 30px;
+                box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+                transition: right 0.3s ease;
+                z-index: 1000;
+            }
+            
+            .navbar-nav.active {
+                right: 0;
+            }
+            
+            .nav-item {
+                margin: 1rem 0;
+                width: 80%;
+                text-align: center;
+            }
+            
+            .nav-link {
+                display: block;
+                padding: 0.8rem;
+                width: 100%;
+            }
+            
+            /* 漢堡選單動畫 */
+            .menu-toggle.active span:nth-child(1) {
+                transform: translateY(9px) rotate(45deg);
+            }
+            
+            .menu-toggle.active span:nth-child(2) {
+                opacity: 0;
+            }
+            
+            .menu-toggle.active span:nth-child(3) {
+                transform: translateY(-9px) rotate(-45deg);
+            }
+            
+            /* 背景遮罩 */
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+            }
+            
+            .overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+        }
+        
+        /* 主視覺區域 */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding-top: 80px;
+        }
+        
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .hero-text {
+            width: 50%;
+            padding-right: 2rem;
+        }
+        
+        .hero-image {
+            width: 50%;
+            text-align: center;
+        }
+        
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .hero-title {
+            font-size: 3.2rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            color: var(--dark);
+            line-height: 1.2;
+        }
+        
+        .hero-title span {
+            color: var(--primary);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            color: #555;
+        }
+        
+        .hero-btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(75, 108, 255, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .hero-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(75, 108, 255, 0.4);
+        }
+        
+        /* 共用區塊樣式 */
+        section {
+            padding: 5rem 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            display: inline-block;
+            padding-bottom: 0.5rem;
+            position: relative;
+        }
+        
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 3px;
+            background: var(--primary);
+            bottom: 0;
+            left: 25%;
+        }
+        
+        /* 關於營隊區塊 */
+        .about {
+            background-color: var(--light);
+        }
+        
+        .about-content {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .about-text {
+            flex: 1;
+            min-width: 300px;
+            padding-right: 2rem;
+        }
+        
+        .about-image {
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+        }
+        
+        .about-image img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 營隊特色區塊 */
+        .features {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            margin-bottom: 1.5rem;
+            width: 70px;
+            height: 70px;
+            background: rgba(75, 108, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .feature-icon i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+        
+        .feature-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+        
+        /* 課程規劃區塊 */
+        .courses {
+            background-color: white;
+        }
+        
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .course-card {
+            background: var(--light);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+        }
+        
+        .course-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .course-image {
+            height: 200px;
+            overflow: hidden;
+        }
+        
+        .course-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+        
+        .course-card:hover .course-image img {
+            transform: scale(1.1);
+        }
+        
+        .course-content {
+            padding: 1.5rem;
+        }
+        
+        .course-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: var(--dark);
+        }
+        
+        .course-desc {
+            margin-bottom: 1rem;
+            color: #666;
+        }
+        
+        /* 費用區塊 */
+        .pricing {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .pricing-cards {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .pricing-card {
+            background: white;
+            padding: 2.5rem 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            width: 300px;
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pricing-header {
+            margin-bottom: 2rem;
+        }
+        
+        .pricing-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .pricing-price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        
+        .pricing-price-desc {
+            font-size: 0.9rem;
+            color: #777;
+        }
+        
+        .pricing-original {
+            text-decoration: line-through;
+            color: #aaa;
+            margin-right: 0.5rem;
+        }
+        
+        .pricing-features {
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+        
+        .pricing-feature-item {
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .pricing-feature-item::before {
+            content: "✓";
+            color: var(--success);
+            margin-right: 0.5rem;
+            font-weight: 800;
+        }
+        
+        .pricing-btn {
+            display: inline-block;
+            padding: 0.8rem 2rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .pricing-btn:hover {
+            background: #3a5ce4;
+            box-shadow: 0 5px 15px rgba(59, 92, 228, 0.3);
+        }
+        
+        .pricing-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: var(--secondary);
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(255, 107, 139, 0.3);
+        }
+        
+        /* 注意事項區塊 */
+        .notices {
+            background-color: white;
+        }
+        
+        .notices-content {
+            background: var(--light);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .notices-group {
+            margin-bottom: 2rem;
+        }
+        
+        .notices-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+        }
+        
+        .notices-title::before {
+            content: "✅";
+            margin-right: 0.8rem;
+            font-size: 1.3rem;
+        }
+        
+        .notices-list {
+            padding-left: 2rem;
+        }
+        
+        .notices-item {
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .notices-item i {
+            color: var(--primary);
+            margin-right: 0.8rem;
+            min-width: 20px;
+            margin-top: 0.3rem;
+        }
+        
+        .notices-highlight {
+            background: rgba(255, 107, 139, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--secondary);
+            margin: 1.5rem 0;
+        }
+        
+        .notices-highlight p {
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .notices-highlight p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .notices-highlight i {
+            color: var(--secondary);
+            margin-right: 0.8rem;
+            min-width: 20px;
+            margin-top: 0.3rem;
+        }
+        
+        .notices-highlight p:last-child i {
+            color: #ff9800;
+        }
+        
+        /* 報名表單 */
+        .registration {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+        
+        .form-container {
+            background: white;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-label i {
+            margin-right: 0.5rem;
+            color: var(--primary);
+            width: 20px;
+            text-align: center;
+        }
+        
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(75, 108, 255, 0.2);
+            outline: none;
+        }
+        
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(75, 108, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+        
+        .form-submit i {
+            margin-right: 0.8rem;
+            font-size: 1.1rem;
+        }
+        
+        .form-submit:hover {
+            background: #3a5ce4;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(75, 108, 255, 0.4);
+        }
+        
+        /* 頁尾 */
+        .footer {
+            background: var(--dark);
+            color: white;
+            padding: 4rem 0 2rem;
+        }
+        
+        .footer-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        
+        .footer-column {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .footer-desc {
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .footer-heading {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .footer-heading::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 2px;
+            background: var(--primary);
+            bottom: 0;
+            left: 0;
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-link {
+            margin-bottom: 0.8rem;
+        }
+        
+        .footer-link a {
+            color: #aaa;
+            text-decoration: none;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .footer-link a i {
+            margin-right: 0.5rem;
+            width: 18px;
+            text-align: center;
+        }
+        
+        .footer-link a:hover {
+            color: white;
+        }
+        
+        .footer-social {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 1.2rem;
+        }
+        
+        .social-icon:hover {
+            background: var(--primary);
+            transform: translateY(-3px);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        /* 回到頂部按鈕 */
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        
+        .back-to-top.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 992px) {
+            .hero-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .hero-text,
+            .hero-image {
+                width: 100%;
+                padding: 0;
+                margin-bottom: 2rem;
+            }
+            
+            .about-content {
+                flex-direction: column;
+            }
+            
+            .about-text {
+                padding-right: 0;
+                margin-bottom: 2rem;
+            }
+            
+            .pricing-cards {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0.8rem 1rem;
+                flex-direction: column;
+            }
+            
+            .navbar-nav {
+                margin-top: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .nav-item {
+                margin: 0.5rem;
+            }
+            
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .section-title h2 {
+                font-size: 2rem;
+            }
+            
+            .form-container {
+                padding: 2rem 1.5rem;
+            }
+        }
+        
+        /* 動畫特效 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <!-- 導航欄 -->
+    <nav class="navbar">
+        <a href="#" class="navbar-brand"><i class="fa-solid fa-robot"></i> AI創意無限營</a>
+        <div class="menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <ul class="navbar-nav">
+            <li class="nav-item"><a href="#about" class="nav-link"><i class="fa-solid fa-info-circle"></i> 營隊介紹</a></li>
+            <li class="nav-item"><a href="#features" class="nav-link"><i class="fa-solid fa-star"></i> 營隊特色</a></li>
+            <li class="nav-item"><a href="#courses" class="nav-link"><i class="fa-solid fa-book-open"></i> 課程規劃</a></li>
+            <li class="nav-item"><a href="#pricing" class="nav-link"><i class="fa-solid fa-tags"></i> 費用資訊</a></li>
+            <li class="nav-item"><a href="#notices" class="nav-link"><i class="fa-solid fa-exclamation-circle"></i> 注意事項</a></li>
+            <li class="nav-item"><a href="#registration" class="nav-link cta-btn"><i class="fa-solid fa-user-plus"></i> 立即報名</a></li>
+        </ul>
+    </nav>
+    
+    <!-- 背景遮罩 -->
+    <div class="overlay"></div>
+
+    <!-- 主視覺區域 -->
+    <section class="hero gradient-bg">
+        <div class="hero-content">
+            <div class="hero-text animate">
+                <h1 class="hero-title">2025 <span>AI創意無限營</span><br>解鎖未來技能</h1>
+                <p class="hero-subtitle">告別傳統才藝班，讓孩子透過AI工具，將無限想像力轉化為具體作品，培養數位時代的核心競爭力！</p>
+                <a href="#registration" class="hero-btn">立即報名</a>
+            </div>
+            <div class="hero-image animate">
+                <img src="/api/placeholder/600/400" alt="孩子們在使用AI工具創作的情景，充滿科技感且充滿歡樂的氛圍，明亮色彩" />
+            </div>
+        </div>
+    </section>
+
+    <!-- 關於營隊 -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="section-title">
+                <h2>營隊介紹</h2>
+            </div>
+            <div class="about-content">
+                <div class="about-text animate">
+                    <p>🚀 告別傳統才藝班，迎接孩子的「AI創意無限營：解鎖未來技能」！ 🚀</p>
+                    <p>各位走在時代尖端的爸媽們，您是否也在尋找能真正啟發孩子潛能、接軌未來的學習機會？別再猶豫！「AI創意無限營」就是您孩子夢想啟航的魔法列車！</p>
+                    <p>我們深知，未來的世界屬於充滿創意與科技力的下一代。因此，我們精心打造一系列結合時下最夯的生成式AI技術的營隊，讓您的孩子不再只是被動學習，而是化身小小作家、藝術家、遊戲設計師、音樂製作人，甚至是網站架站高手！</p>
+                    <p>🎨 揮灑無限創意，AI就是神隊友！ ✍️</p>
+                    <p>想像一下，孩子們能用文字召喚出奇幻世界的小說、用簡單指令繪製出獨一無二的畫作、用AI譜寫出屬於自己的動人樂章… 這不再是遙不可及的夢想！在「AI創意無限營」中，我們將引導孩子們輕鬆駕馭AI工具，將腦海中的無限想像力轉化為具體作品，激發他們與生俱來的創造天賦！</p>
+                </div>
+                <div class="about-image animate">
+                    <img src="/api/placeholder/500/350" alt="孩子們在互動式AI創作教室中，展示他們的作品，充滿驚奇和創意的表情" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 營隊特色 -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>營隊特色</h2>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card animate">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="feature-title">黃金比例小班制</h3>
+                    <p>6-10人小班制教學，讓老師能充分關注每位小朋友的學習狀況，給予個別指導，確保學習成效。</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h3 class="feature-title">專業認證師資</h3>
+                    <p>由AI領域專業認證師資親自帶領，結合教育專業與科技創新，帶給孩子最優質的學習體驗。</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">安心學習環境</h3>
+                    <p>每日專業消毒，保持環境清潔，為孩子打造安心的學習空間，讓家長放心、孩子開心。</p>
+                </div>
+                <div class="feature-card animate">
+                    <div class="feature-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h3 class="feature-title">每週獨特主題</h3>
+                    <p>課程設計多元豐富，每週不同主題，讓創意無限延伸，激發孩子各方面的潛能與興趣。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 課程規劃 -->
+    <section id="courses" class="courses">
+        <div class="container">
+            <div class="section-title">
+                <h2>課程規劃</h2>
+            </div>
+            <div class="courses-grid">
+                <div class="course-card animate">
+                    <div class="course-image">
+                        <img src="/api/placeholder/400/200" alt="孩子使用AI輔助寫作，創作自己的小說故事情境" />
+                    </div>
+                    <div class="course-content">
+                        <h3 class="course-title">妙筆生花【AI小說夢工廠】</h3>
+                        <p class="course-desc">讓孩子運用AI工具創作屬於自己的奇幻故事，培養寫作能力與文學素養，啟發無限想像力。</p>
+                    </div>
+                </div>
+                <div class="course-card animate">
+                    <div class="course-image">
+                        <img src="/api/placeholder/400/200" alt="孩子使用AI繪圖工具創作精美插畫的情境" />
+                    </div>
+                    <div class="course-content">
+                        <h3 class="course-title">點石成金【AI繪圖超能力】</h3>
+                        <p class="course-desc">透過AI繪圖工具，將孩子的創意想法轉化為精美插畫，無需繪畫基礎，人人都能成為小小藝術家。</p>
+                    </div>
+                </div>
+                <div class="course-card animate">
+                    <div class="course-image">
+                        <img src="/api/placeholder/400/200" alt="孩子正在創作自己的AI繪本，色彩豐富且充滿童趣的場景" />
+                    </div>
+                    <div class="course-content">
+                        <h3 class="course-title">童心繪意【AI繪本奇遇記】</h3>
+                        <p class="course-desc">指導孩子利用AI技術創作屬於自己的繪本故事，從構思、繪圖到排版，完整體驗出版創作的樂趣。</p>
+                    </div>
+                </div>
+                <div class="course-card animate">
+                    <div class="course-image">
+                        <img src="/api/placeholder/400/200" alt="孩子們正在使用AI工具製作簡單動畫，畫面上有多個角色和場景設計" />
+                    </div>
+                    <div class="course-content">
+                        <h3 class="course-title">躍然眼前【動畫製作AI攻略】</h3>
+                        <p class="course-desc">讓孩子輕鬆學會使用AI動畫工具，製作簡單有趣的動畫短片，培養視覺敘事能力。</p>
+                    </div>
+                </div>
+                <div class="course-card animate">
+                    <div class="course-image">
+                        <img src="/api/placeholder/400/200" alt="孩子們戴著耳機，專注在電腦前創作音樂的場景，充滿音符元素" />
+                    </div>
+                    <div class="course-content">
+                        <h3 class="course-title">聲聲不息【AI音樂夢工廠】</h3>
+                        <p class="course-desc">透過AI音樂生成工具，即使沒有樂理基礎，也能創作出動人旋律，體驗音樂創作的無窮樂趣。</p>
+                    </div>
+                </div>
+                <div class="course-card animate">
+                    <div class="course-image">
+                        <img src="/api/placeholder/400/200" alt="孩子使用AI輔助學習工具，在平板電腦上探索各種知識領域的畫面" />
+                    </div>
+                    <div class="course-content">
+                        <h3 class="course-title">玩轉學習【AI智慧學習好幫手】</h3>
+                        <p class="course-desc">教導孩子如何運用AI工具輔助學習，提升學習效率，讓學習變得更有趣、更高效。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 費用資訊 -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <div class="section-title">
+                <h2>費用資訊</h2>
+            </div>
+            <div class="pricing-cards">
+                <div class="pricing-card animate">
+                    <div class="pricing-badge">早鳥優惠</div>
+                    <div class="pricing-header">
+                        <h3 class="pricing-title">四天半日營</h3>
+                        <p class="pricing-price">4,250元</p>
+                        <p class="pricing-price-desc"><span class="pricing-original">5,000元</span> 早鳥優惠</p>
+                    </div>
+                    <div class="pricing-features">
+                        <div class="pricing-feature-item">營期：7/1～7/4</div>
+                        <div class="pricing-feature-item">時間：09:00～12:30</div>
+                        <div class="pricing-feature-item">專業師資授課</div>
+                        <div class="pricing-feature-item">小班制教學</div>
+                        <div class="pricing-feature-item">課程教材費用全包</div>
+                        <div class="pricing-feature-item">營隊專屬紀念品</div>
+                    </div>
+                    <a href="#registration" class="pricing-btn">立即報名</a>
+                </div>
+                <div class="pricing-card animate">
+                    <div class="pricing-badge">早鳥優惠</div>
+                    <div class="pricing-header">
+                        <h3 class="pricing-title">五天半日營</h3>
+                        <p class="pricing-price">5,300元</p>
+                        <p class="pricing-price-desc"><span class="pricing-original">6,250元</span> 早鳥優惠</p>
+                    </div>
+                    <div class="pricing-features">
+                        <div class="pricing-feature-item">營期：依梯次選擇</div>
+                        <div class="pricing-feature-item">時間：09:00～12:30</div>
+                        <div class="pricing-feature-item">專業師資授課</div>
+                        <div class="pricing-feature-item">小班制教學</div>
+                        <div class="pricing-feature-item">課程教材費用全包</div>
+                        <div class="pricing-feature-item">營隊專屬紀念品</div>
+                    </div>
+                    <a href="#registration" class="pricing-btn">立即報名</a>
+                </div>
+            </div>
+            <div class="notices-highlight" style="text-align: center; margin-top: 2rem;">
+                <p style="justify-content: center;"><i class="fas fa-calendar-check"></i> 早鳥優惠截止日期：2025年5月25日</p>
+                <p style="justify-content: center;"><i class="fas fa-exclamation-circle"></i> 各梯次限額，手刀報名，錯過今年的課程，以後....不一定會再有喔！</p>
+                <p style="justify-content: center;"><i class="fas fa-users"></i> 各營隊人數依照繳費順序，額滿將協助選擇其他營隊</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 注意事項 -->
+    <section id="notices" class="notices">
+        <div class="container">
+            <div class="section-title">
+                <h2>營隊報名須知</h2>
+            </div>
+            <div class="notices-content">
+                <p style="margin-bottom: 1.5rem;">請務必詳讀以下訊息，一經報名成功即視為同意並配合營隊規範及疾病防治之相關處理措施。</p>
+                
+                <div class="notices-group">
+                    <h3 class="notices-title">權責說明</h3>
+                    <ul class="notices-list">
+                        <li class="notices-item"><i class="fas fa-check-circle"></i> 報名時請確認學員是否具報名資格(年齡或年級)，資格不符者本教室有權取消預約資格。</li>
+                        <li class="notices-item"><i class="fas fa-check-circle"></i> 營隊期間學員需遵守團體紀律，如因不守規定而發生意外事件，或不當言行造成營隊整體安全困擾及其他學員權益受損，相關責任需自行負責，且本營隊保留退訓之權利，並依退費辦法退費敬請見諒。若有發生孩子間的爭議，請務必向教室聯絡以了解狀況。</li>
+                        <li class="notices-item"><i class="fas fa-check-circle"></i> 為讓孩童學習獨立及團體生活，不接受家長以任何方式陪伴與跟課。</li>
+                        <li class="notices-item"><i class="fas fa-check-circle"></i> 若孩童有特殊生理及健康狀況或其他需求或病史（如：素食、氣喘、蠶豆症⋯等），請務必於報名時註記並與營隊承辦人聯絡並告知，並請於課程當日再次告知現場人員，以達雙方共識及配合。</li>
+                        <li class="notices-item"><i class="fas fa-check-circle"></i> 為維護整體學童身體健康與安全，需專人協助、照顧或患有傳染性疾病者，請暫勿報名參加。</li>
+                    </ul>
+                </div>
+                
+                <div class="notices-group">
+                    <h3 class="notices-title">教室防疫須知</h3>
+                    <ul class="notices-list">
+                        <li class="notices-item"><i class="fas fa-spray-can-sparkles"></i> 每天課程結束後，我們會進行全面的清潔與消毒。</li>
+                        <li class="notices-item"><i class="fas fa-wind"></i> 全天候開啟空氣清淨機，以維持教室室內空氣充份流通。</li>
+                        <li class="notices-item"><i class="fas fa-hands-bubbles"></i> 隨時叮嚀小朋友勤洗手、多喝水，並盡量不要觸摸眼、鼻、口，保持良好個人衛生習慣。</li>
+                        <li class="notices-item"><i class="fas fa-thermometer"></i> 如學員出現發燒、咳嗽...等身體不適症狀，我們會主動與家長聯繫，並協助後續相關處理。</li>
+                    </ul>
+                </div>
+                
+                <div class="notices-group">
+                    <h3 class="notices-title">其它注意事項</h3>
+                    <ul class="notices-list">
+                        <li class="notices-item"><i class="fas fa-clock"></i> 接送時間：09:00～12:30前，超時酌收超時費，每半小時50元，採日結方式付款。</li>
+                        <li class="notices-item"><i class="fas fa-cloud-rain"></i> 如天災颱風等不可抗力因素停班停課，依照政府公告，並以簡訊或Line個別通知外，並請注意臉書粉絲團發佈之相關活動訊息。</li>
+                        <li class="notices-item"><i class="fas fa-file-alt"></i> 本營隊簡章如有未盡事宜，可隨時由本單位修改增定之。</li>
+                        <li class="notices-item"><i class="fas fa-exchange-alt"></i> 以上師資、課程內容、時間及場地等，本單位保留變更之權利。</li>
+                    </ul>
+                </div>
+                
+                <div class="notices-highlight">
+                    <p><i class="fas fa-info-circle"></i> 提交報名表單後，請加 line ,搜尋 <strong>@dons</strong> 與我們確認報名成功後，將提供匯款資訊。</p>
+                    <p><i class="fas fa-info-circle"></i> 報名成功與否，依照匯款順序決定。如遇額滿，將協助選擇其他班級或者退費。</p>
+                    <p><i class="fas fa-exclamation-triangle"></i> 因各營隊名額有限，請盡速匯款方能確保上課權益。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 報名表單 -->
+    <section id="registration" class="registration">
+        <div class="container">
+            <div class="section-title">
+                <h2>立即報名</h2>
+            </div>
+            <div class="form-container">
+                <form id="registration-form">
+                    <div class="form-group">
+                        <label for="parent-name" class="form-label"><i class="fas fa-user"></i> 家長姓名</label>
+                        <input type="text" id="parent-name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="parent-phone" class="form-label"><i class="fas fa-phone"></i> 家長電話</label>
+                        <input type="tel" id="parent-phone" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="parent-email" class="form-label"><i class="fas fa-envelope"></i> 電子郵件</label>
+                        <input type="email" id="parent-email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="child-name" class="form-label"><i class="fas fa-child"></i> 孩子姓名</label>
+                        <input type="text" id="child-name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="child-age" class="form-label"><i class="fas fa-birthday-cake"></i> 孩子年齡</label>
+                        <input type="number" id="child-age" class="form-input" min="5" max="15" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="camp-type" class="form-label"><i class="fas fa-laptop-code"></i> 營隊選擇</label>
+                        <select id="camp-type" class="form-select" required>
+                            <option value="">請選擇營隊類型</option>
+                            <option value="novel">妙筆生花【AI小說夢工廠】</option>
+                            <option value="drawing">點石成金【AI繪圖超能力】</option>
+                            <option value="picture-book">童心繪意【AI繪本奇遇記】</option>
+                            <option value="animation">躍然眼前【動畫製作AI攻略】</option>
+                            <option value="music">聲聲不息【AI音樂夢工廠】</option>
+                            <option value="learning">玩轉學習【AI智慧學習好幫手】</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="camp-duration" class="form-label"><i class="fas fa-calendar-alt"></i> 營隊期間</label>
+                        <select id="camp-duration" class="form-select" required>
+                            <option value="">請選擇營隊期間</option>
+                            <option value="4days">四天半日營（7/1～7/4）</option>
+                            <option value="5days-1">五天半日營（第一梯次）</option>
+                            <option value="5days-2">五天半日營（第二梯次）</option>
+                            <option value="5days-3">五天半日營（第三梯次）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="special-notes" class="form-label"><i class="fas fa-sticky-note"></i> 特殊需求備註（如：過敏、飲食限制等）</label>
+                        <textarea id="special-notes" class="form-textarea"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="form-submit"><i class="fas fa-paper-plane"></i> 提交報名</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- 頁尾 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-column">
+                    <div class="footer-logo"><i class="fas fa-robot"></i> AI創意無限營</div>
+                    <p class="footer-desc">專為孩子打造的AI創意啟發營隊，培養未來科技人才，激發無限創意潛能！</p>
+                    <div class="footer-social">
+                        <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-youtube"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-line"></i></a>
+                    </div>
+                </div>
+                <div class="footer-column">
+                    <h3 class="footer-heading">聯絡資訊</h3>
+                    <ul class="footer-links">
+                        <li class="footer-link"><a href="tel:+886912345678"><i class="fas fa-phone"></i> 電話：0912-345-678</a></li>
+                        <li class="footer-link"><a href="mailto:info@aicamp.tw"><i class="fas fa-envelope"></i> Email：info@aicamp.tw</a></li>
+                        <li class="footer-link"><a href="#"><i class="fab fa-line"></i> LINE ID：@dons</a></li>
+                        <li class="footer-link"><a href="#"><i class="fas fa-map-marker-alt"></i> 地址：新北市板橋區文化路一段111號</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3 class="footer-heading">營隊資訊</h3>
+                    <ul class="footer-links">
+                        <li class="footer-link"><a href="#about"><i class="fas fa-info-circle"></i> 營隊介紹</a></li>
+                        <li class="footer-link"><a href="#features"><i class="fas fa-star"></i> 營隊特色</a></li>
+                        <li class="footer-link"><a href="#courses"><i class="fas fa-book-open"></i> 課程規劃</a></li>
+                        <li class="footer-link"><a href="#pricing"><i class="fas fa-tags"></i> 費用資訊</a></li>
+                        <li class="footer-link"><a href="#notices"><i class="fas fa-exclamation-circle"></i> 注意事項</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 AI創意無限營 All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 回到頂部按鈕 -->
+    <div class="back-to-top"><i class="fas fa-arrow-up"></i></div>
+
+    <!-- JavaScript -->
+    <script>
+        // 導航欄互動
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navbarNav = document.querySelector('.navbar-nav');
+        const overlay = document.querySelector('.overlay');
+        const navLinks = document.querySelectorAll('.nav-link');
+        
+        menuToggle.addEventListener('click', () => {
+            menuToggle.classList.toggle('active');
+            navbarNav.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.classList.toggle('no-scroll');
+        });
+        
+        overlay.addEventListener('click', () => {
+            menuToggle.classList.remove('active');
+            navbarNav.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.classList.remove('no-scroll');
+        });
+        
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                menuToggle.classList.remove('active');
+                navbarNav.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.classList.remove('no-scroll');
+            });
+        });
+        
+        // 平滑滾動效果
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if(targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if(targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 70,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+        
+        // 回到頂部按鈕
+        const backToTopButton = document.querySelector('.back-to-top');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopButton.classList.add('active');
+            } else {
+                backToTopButton.classList.remove('active');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // 表單提交處理
+        const form = document.getElementById('registration-form');
+        
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 在這裡可以添加表單驗證和提交邏輯
+            alert('感謝您的報名！我們將盡快與您聯繫確認報名資訊。');
+            
+            // 重置表單
+            form.reset();
+        });
+        
+        // 動畫效果
+        const animateElements = document.querySelectorAll('.animate');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+        
+        animateElements.forEach(element => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(30px)';
+            element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(element);
+        });
+    </script>
+</body>
+</html>
