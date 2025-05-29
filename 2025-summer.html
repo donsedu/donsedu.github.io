@@ -633,11 +633,13 @@
             right: -10px;
             background: var(--secondary);
             color: white;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 1.2rem;
             border-radius: 50px;
             box-shadow: 0 5px 15px rgba(255, 107, 139, 0.3);
+            transform: rotate(5deg);
+            z-index: 1;
         }
         
         /* 注意事項區塊 */
@@ -1346,6 +1348,7 @@
             </div>
             <div class="pricing-cards">
                 <div class="pricing-card animate">
+                    <div class="pricing-badge" id="badge-4days" style="display: none;">早鳥價</div>
                     <div class="pricing-header">
                         <h3 class="pricing-title">四天半日營</h3>
                         <p class="pricing-price" id="price-4days">5,000元</p>
@@ -1363,6 +1366,7 @@
                     <a href="#registration" class="pricing-btn">立即報名</a>
                 </div>
                 <div class="pricing-card animate">
+                    <div class="pricing-badge" id="badge-5days" style="display: none;">早鳥價</div>
                     <div class="pricing-header">
                         <h3 class="pricing-title">五天半日營</h3>
                         <p class="pricing-price" id="price-5days">6,250元</p>
@@ -1559,23 +1563,29 @@
             // 更新四天營價格
             const price4Days = document.getElementById('price-4days');
             const priceDesc4Days = document.getElementById('price-desc-4days');
+            const badge4Days = document.getElementById('badge-4days');
             if (isEarlyBird) {
                 price4Days.textContent = `${PRICES.fourDays.earlyBird.toLocaleString()}元`;
                 priceDesc4Days.style.display = 'block';
+                badge4Days.style.display = 'block';
             } else {
                 price4Days.textContent = `${PRICES.fourDays.regular.toLocaleString()}元`;
                 priceDesc4Days.style.display = 'none';
+                badge4Days.style.display = 'none';
             }
             
             // 更新五天營價格
             const price5Days = document.getElementById('price-5days');
             const priceDesc5Days = document.getElementById('price-desc-5days');
+            const badge5Days = document.getElementById('badge-5days');
             if (isEarlyBird) {
                 price5Days.textContent = `${PRICES.fiveDays.earlyBird.toLocaleString()}元`;
                 priceDesc5Days.style.display = 'block';
+                badge5Days.style.display = 'block';
             } else {
                 price5Days.textContent = `${PRICES.fiveDays.regular.toLocaleString()}元`;
                 priceDesc5Days.style.display = 'none';
+                badge5Days.style.display = 'none';
             }
             
             // 更新早鳥優惠提示
