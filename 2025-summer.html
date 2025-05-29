@@ -1346,11 +1346,12 @@
             </div>
             <div class="pricing-cards">
                 <div class="pricing-card animate">
-                    <div class="pricing-badge">早鳥優惠</div>
                     <div class="pricing-header">
                         <h3 class="pricing-title">四天半日營</h3>
-                        <p class="pricing-price">4,250元</p>
-                        <p class="pricing-price-desc"><span class="pricing-original">5,000元</span> 早鳥優惠</p>
+                        <p class="pricing-price" id="price-4days">5,000元</p>
+                        <p class="pricing-price-desc" id="price-desc-4days" style="display: none;">
+                            <span class="pricing-original">5,000元</span> 早鳥優惠
+                        </p>
                     </div>
                     <div class="pricing-features">
                         <div class="pricing-feature-item">營期：7/1～7/4</div>
@@ -1362,11 +1363,12 @@
                     <a href="#registration" class="pricing-btn">立即報名</a>
                 </div>
                 <div class="pricing-card animate">
-                    <div class="pricing-badge">早鳥優惠</div>
                     <div class="pricing-header">
                         <h3 class="pricing-title">五天半日營</h3>
-                        <p class="pricing-price">5,300元</p>
-                        <p class="pricing-price-desc"><span class="pricing-original">6,250元</span> 早鳥優惠</p>
+                        <p class="pricing-price" id="price-5days">6,250元</p>
+                        <p class="pricing-price-desc" id="price-desc-5days" style="display: none;">
+                            <span class="pricing-original">6,250元</span> 早鳥優惠
+                        </p>
                     </div>
                     <div class="pricing-features">
                         <div class="pricing-feature-item">營期：依梯次選擇</div>
@@ -1379,7 +1381,9 @@
                 </div>
             </div>
             <div class="notices-highlight" style="text-align: center; margin-top: 2rem;">
-                <p style="justify-content: center;"><i class="fas fa-calendar-check"></i> 早鳥優惠截止日期：2025年5月25日</p>
+                <p style="justify-content: center;" id="early-bird-notice" style="display: none;">
+                    <i class="fas fa-calendar-check"></i> 早鳥優惠截止日期：2025年6月27日
+                </p>
                 <p style="justify-content: center;"><i class="fas fa-exclamation-circle"></i> 各梯次限額，手刀報名，錯過今年的課程，以後....不一定會再有喔！</p>
                 <p style="justify-content: center;"><i class="fas fa-users"></i> 各營隊人數依照繳費順序，額滿將協助選擇其他營隊</p>
             </div>
@@ -1535,6 +1539,50 @@
         // 倒數計時器相關變數
         const TARGET_DATE = new Date('2025-05-27T00:00:00');
         
+        // 價格設定
+        const PRICES = {
+            fourDays: {
+                regular: 5000,
+                earlyBird: 4250
+            },
+            fiveDays: {
+                regular: 6250,
+                earlyBird: 5300
+            }
+        };
+        
+        // 更新價格顯示
+        function updatePricing() {
+            const now = new Date();
+            const isEarlyBird = now < TARGET_DATE;
+            
+            // 更新四天營價格
+            const price4Days = document.getElementById('price-4days');
+            const priceDesc4Days = document.getElementById('price-desc-4days');
+            if (isEarlyBird) {
+                price4Days.textContent = `${PRICES.fourDays.earlyBird.toLocaleString()}元`;
+                priceDesc4Days.style.display = 'block';
+            } else {
+                price4Days.textContent = `${PRICES.fourDays.regular.toLocaleString()}元`;
+                priceDesc4Days.style.display = 'none';
+            }
+            
+            // 更新五天營價格
+            const price5Days = document.getElementById('price-5days');
+            const priceDesc5Days = document.getElementById('price-desc-5days');
+            if (isEarlyBird) {
+                price5Days.textContent = `${PRICES.fiveDays.earlyBird.toLocaleString()}元`;
+                priceDesc5Days.style.display = 'block';
+            } else {
+                price5Days.textContent = `${PRICES.fiveDays.regular.toLocaleString()}元`;
+                priceDesc5Days.style.display = 'none';
+            }
+            
+            // 更新早鳥優惠提示
+            const earlyBirdNotice = document.getElementById('early-bird-notice');
+            earlyBirdNotice.style.display = isEarlyBird ? 'flex' : 'none';
+        }
+        
         // 更新倒數計時器
         function updateCountdown() {
             const now = new Date();
@@ -1553,6 +1601,9 @@
             document.getElementById('countdown').textContent = 
                 `早鳥優惠倒數：${days}天${hours}時${minutes}分${seconds}秒`;
         }
+        
+        // 初始化價格顯示
+        updatePricing();
         
         // 每秒更新一次倒數計時器
         setInterval(updateCountdown, 1000);
