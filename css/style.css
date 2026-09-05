@@ -240,15 +240,12 @@ body {
   margin-bottom: 10px;
 }
 .blog-entry-title a {
-  color: var(--text);
-  text-decoration: underline;
-  text-decoration-color: var(--orange);
-  text-decoration-thickness: 2.5px;
-  text-underline-offset: 5px;
-  text-decoration-skip-ink: none;
+  color: var(--orange-dark);
+  text-decoration: none;
   transition: color 0.2s;
 }
-.blog-entry-title a:hover { color: var(--orange-dark); }
+.blog-entry-title a:hover { color: var(--orange); }
+.blog-entry-title a:active { color: var(--orange); }
 .blog-entry-excerpt {
   font-size: 15.5px;
   color: var(--brown);
