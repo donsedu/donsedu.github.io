@@ -291,14 +291,22 @@ body {
 .post-body blockquote a:hover { color: var(--orange); border-bottom-color: var(--orange); }
 
 /* 文章表格美化 */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 20px 0 26px;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px rgba(93, 64, 32, 0.08);
+}
 .post-body table {
   width: 100%;
   border-collapse: collapse;
-  margin: 20px 0 26px;
+  min-width: 520px;
   font-size: 14.5px;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 3px 12px rgba(93, 64, 32, 0.08);
+}
+@media (min-width: 641px) {
+  .post-body table { min-width: 0; }
 }
 .post-body thead th {
   background: var(--orange-dark);
@@ -307,7 +315,12 @@ body {
   text-align: left;
   font-weight: 700;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
+.post-body thead th:first-child { border-radius: 14px 0 0 0; }
+.post-body thead th:last-child { border-radius: 0 14px 0 0; }
+.post-body tbody tr:last-child td:first-child { border-radius: 0 0 0 14px; }
+.post-body tbody tr:last-child td:last-child { border-radius: 0 0 14px 0; }
 .post-body tbody td {
   padding: 11px 14px;
   border-bottom: 1px solid var(--cream-3);

@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=3">
+<link rel="stylesheet" href="/css/style.css?v=4">
 </head>
 <body>
 
@@ -147,6 +147,16 @@
 <script>
   document.querySelector('.nav-toggle').addEventListener('click', function () {
     document.querySelector('.nav-links').classList.toggle('open');
+  });
+  // 文章表格 RWD：包 overflow wrapper（手機橫向捲動）
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.post-body table').forEach(function (t) {
+      if (t.parentElement.classList.contains('table-wrap')) return;
+      var w = document.createElement('div');
+      w.className = 'table-wrap';
+      t.parentNode.insertBefore(w, t);
+      w.appendChild(t);
+    });
   });
 </script>
 </body>
