@@ -23,6 +23,8 @@ body {
   background: var(--cream-1);
   line-height: 1.7;
   overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* ===== Nav ===== */
