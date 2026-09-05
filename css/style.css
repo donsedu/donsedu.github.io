@@ -237,6 +237,69 @@ body {
 .post-body li { margin-bottom: 6px; font-size: 16px; }
 .post-back { display: inline-block; margin-bottom: 20px; color: var(--orange-dark); text-decoration: none; font-weight: 700; }
 
+/* 延伸閱讀（blockquote）美化 */
+.post-body blockquote {
+  background: linear-gradient(135deg, var(--cream-1), #FFF3E4);
+  border-left: 5px solid var(--orange);
+  border-radius: 0 16px 16px 0;
+  padding: 16px 20px;
+  margin: 26px 0;
+  font-size: 15px;
+  color: var(--brown);
+  line-height: 1.9;
+  box-shadow: 0 3px 10px rgba(93, 64, 32, 0.06);
+}
+.post-body blockquote a {
+  color: var(--orange-dark);
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 2px solid var(--cream-3);
+}
+.post-body blockquote a:hover { color: var(--orange); border-bottom-color: var(--orange); }
+
+/* 文章表格美化 */
+.post-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0 26px;
+  font-size: 14.5px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 3px 12px rgba(93, 64, 32, 0.08);
+}
+.post-body thead th {
+  background: var(--orange-dark);
+  color: #fff;
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.post-body tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--cream-3);
+  vertical-align: top;
+}
+.post-body tbody tr:nth-child(even) { background: var(--cream-1); }
+.post-body tbody tr:hover { background: var(--cream-2); }
+.post-body tbody tr:last-child td { border-bottom: none; }
+
+/* 電話連結美化 */
+a[href^="tel:"] {
+  color: var(--orange-dark);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+a[href^="tel:"]::before { content: "📞 "; }
+a[href^="tel:"]:hover { color: var(--orange); }
+
+/* 手機表格捲動 */
+@media (max-width: 560px) {
+  .post-body { overflow-x: auto; }
+  .post-body table { min-width: 420px; }
+}
+
 /* ===== 響應式 ===== */
 @media (max-width: 860px) {
   .nav-toggle { display: block; }
