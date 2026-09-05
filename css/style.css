@@ -244,9 +244,11 @@ body {
 .blog-entry-title a {
   color: var(--text);
   text-decoration: none;
-  transition: color 0.2s;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+  transition: color 0.2s, border-color 0.2s;
 }
-.blog-entry-title a:hover { color: var(--orange-dark); }
+.blog-entry-title a:hover { color: var(--orange-dark); border-bottom-color: var(--orange); }
 .blog-entry-excerpt {
   font-size: 15.5px;
   color: var(--brown);
