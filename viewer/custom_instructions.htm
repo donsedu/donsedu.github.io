@@ -284,9 +284,9 @@
     transition: transform 0.25s ease, left 0.25s ease, top 0.25s ease;
     cursor: zoom-in;
   }
-  /* 點 PLI 放大檢視（全域：桌面＋手機；再點縮回）*/
+  /* 點 PLI 放大檢視（全域：桌面＋手機；再點縮回）。transform 不用 !important → JS fit scale 可覆蓋 */
   #pli.pli-expanded {
-    transform: translate(-50%, -50%) scale(2.2) !important;
+    transform: translate(-50%, -50%) scale(2.2);
     transform-origin: center center !important;
     top: 50% !important;
     left: 50% !important;
@@ -420,7 +420,7 @@
     }
     /* 點 PLI 放大檢視（再點一次縮回）*/
     #pli.pli-expanded {
-      transform: translate(-50%, -50%) scale(2.4) !important;
+      transform: translate(-50%, -50%) scale(2.4);
       transform-origin: center center !important;
       top: 45% !important;
       left: 50% !important;
@@ -494,7 +494,7 @@
       transition: transform 0.25s ease;
     }
     #pli.pli-expanded {
-      transform: translate(-50%, -50%) scale(2.2) !important;
+      transform: translate(-50%, -50%) scale(2.2);
       transform-origin: center center !important;
       top: 45% !important;
       left: 50% !important;
@@ -761,17 +761,17 @@
           e.style.display = 'block';
           try {
             const step = manager.stepHandler.getCurrentStep();
-            // RWD：手機/小平板用較小尺寸繪製 PLI（否則 360px 寬繪製再 scale 會爆螢幕）
+            // RWD：手機/小平板用較小尺寸繪製 PLI（預設小卡不佔版面，點擊放大時才 Fit 檢視）
             // PackPlis 會在傳入區域內自動最大化每個零件圖：零件少→圖大、多→縮小排列
             let pw, ph;
             if (window.innerWidth <= 950) {
               if (window.innerHeight > window.innerWidth) {
-                pw = Math.min(230, Math.round(window.innerWidth * 0.58)); // 直放：寬隨螢幕，給 PackPlis 較大空間
-                ph = Math.round(window.innerHeight * 0.4);
-              } else { pw = 130; ph = 200; }  // 橫放
+                pw = Math.min(180, Math.round(window.innerWidth * 0.46)); // 直放：寬約半個螢幕
+                ph = Math.round(window.innerHeight * 0.32);
+              } else { pw = 100; ph = 160; }  // 橫放小卡
             } else {
-              pw = 400;  // 桌面給足空間（PackPlis 依內容收斂實際寬度）
-              ph = 620;
+              pw = 340;
+              ph = 520;
             }
             manager.pliBuilder.drawPLIForStep(true, step, pw, ph, true);
           } catch(err) {}
@@ -926,12 +926,26 @@
     if (e.key === ' ') { e.preventDefault(); togglePlay(); }
   });
 
-  // PLI 點擊放大/縮回（全域：桌面＋手機；桌面原本的單零件預覽由整體放大取代）
+  // PLI 點擊放大/縮回（全域：桌面＋手機；放大 = Fit 畫面，依卡尺寸自動算 scale）
   var pliToggleEl = document.getElementById('pli');
   if (pliToggleEl) {
     pliToggleEl.addEventListener('click', function(e) {
       e.stopPropagation();
-      this.classList.toggle('pli-expanded');
+      if (this.classList.contains('pli-expanded')) {
+        this.classList.remove('pli-expanded');
+        this.style.transform = ''; // 回 CSS 預設位置/尺寸
+      } else {
+        // 依 PLI 實際尺寸算 fit scale：寬高各留邊距，整卡放進畫面
+        var w = this.offsetWidth || 200;
+        var h = this.offsetHeight || 200;
+        var fitScale = Math.min(
+          (window.innerWidth * 0.92) / w,
+          (window.innerHeight * 0.85) / h
+        );
+        if (fitScale < 1.05) fitScale = 1.05; // 至少微放大，避免點擊無感
+        this.classList.add('pli-expanded');
+        this.style.transform = 'translate(-50%, -50%) scale(' + fitScale.toFixed(3) + ')';
+      }
     });
   }
 
