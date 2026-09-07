@@ -65,12 +65,8 @@ jobs:
       - name: Find uploaded .io files
         id: find-io
         run: |
-          # push 觸發：列出本次 push 的 uploads/*.io
-          if [ "${{ github.event_name }}" = "push" ]; then
-            git diff --name-only HEAD~1 HEAD -- uploads/ | grep -i '\.io$' > /tmp/new_ios.txt || true
-          else
-            ls uploads/*.io 2>/dev/null > /tmp/new_ios.txt || true
-          fi
+          # 直接列出 uploads/ 下的 .io（不依賴 git diff——checkout 預設只抓 1 commit）
+          ls uploads/*.io 2>/dev/null > /tmp/new_ios.txt || true
           echo "待處理 $(wc -l < /tmp/new_ios.txt 2>/dev/null || echo 0) 個 .io"
 
       - name: Process uploads
@@ -93,12 +89,14 @@ jobs:
           exit $FAILED
 
       - name: Clean processed .io
+        if: always()
         run: |
           rm -f uploads/*.io
           # 保留 uploads/.gitkeep
           touch uploads/.gitkeep
 
       - name: Commit & push result
+        if: always()
         run: |
           git config user.name "LEGO Auto Bot"
           git config user.email "lego-bot@users.noreply.github.com"
