@@ -210,13 +210,18 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
     // Find, sort and set up icons to show:
     this.createClickMap(step);
     let textHeight = (!fillHeight ? maxHeight : maxWidth) / Math.sqrt(this.clickMap.length) * 0.19;
+    // 固定字體：不隨零件數/步驟變動（各步驟字體一致）；基準依 PLI 寬度
+    const baseFont = Math.max(12, Math.round(maxWidth*0.045));
+    // 右側預留帶：容納零件長度數字框/圓形底（PLI 撐開，保持在零件右下方不被切）
+    const annotationReserve = Math.ceil(maxWidth*0.2);
     let [W,H] = Algorithm.PackPlis(fillHeight, maxWidth-4, maxHeight-8, this.clickMap, textHeight);
     const DPR = window.devicePixelRatio;
     if(fillHeight) {
         let h = Math.max(100, 12+H);
-        this.canvas.width = maxWidth*DPR;
+        let cw = maxWidth + annotationReserve;
+        this.canvas.width = cw*DPR;
         this.canvas.height = h*DPR;
-        this.canvas.style.width = maxWidth+"px";
+        this.canvas.style.width = cw+"px";
         this.canvas.style.height = h+"px";
     }
     else {
@@ -257,41 +262,39 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
     context.fillStyle = "#000";
     context.lineWidth = "1";
     if(this.groupParts) {
-        // 數量字體縮為一半（textHeight*1.1 → *0.55）
-        context.font = parseInt(textHeight*0.55*DPR) + "px sans-serif";
+        // 數量字體：固定大小（baseFont），各步驟一致
+        context.font = parseInt(baseFont*DPR) + "px sans-serif";
         context.fillStyle = "black";
         function drawMultiplier(icon) {
             let x = icon.x * DPR;
             let y = (icon.y + icon.MULT_Y) * DPR;
             let w = icon.MULT_DX * DPR;
             let h = textHeight * DPR;
-            // 數量文字 y 基準也跟著縮（0.84 → 0.92，貼近零件下緣）
+            // 數量文字 y 基準：貼近零件下緣
             context.fillText(icon.mult + "x", x, y + h*0.92); // *0.92 to move a bit up from lower line.
         }
         this.clickMap.forEach(drawMultiplier);
     }
     // Draw Annotation:（零件長度文字）
-    // 字體大小與數量標籤(2x)相同；外框/圓形底以文字實際寬度 + padding 自動調整。
-    // padding = 字高 0.2 倍；超出 PLI 邊緣時自動翻到零件另一側並收進邊界，避免被切。
-    context.font = parseInt(textHeight*0.55*DPR) + "px sans-serif";
+    // 字體固定（baseFont）與數量一致；外框/圓形底以文字實際寬度 + padding 自動調整。
+    // 保持在零件右下方：右側預留帶(annotationReserve)已撐開 canvas，末端兜底收進邊界。
+    context.font = parseInt(baseFont*DPR) + "px sans-serif";
     this.clickMap.filter(icon => icon.annotation).forEach(icon => {
 	let x = (icon.x+icon.FULL_DX+1)*DPR;
 	let y = (icon.y+icon.ANNO_Y)*DPR;
 	let h = textHeight*DPR;
 	const txt = icon.annotation;
-	const fontPx = parseInt(textHeight*0.55*DPR);
+	const fontPx = parseInt(baseFont*DPR);
 	const tw = context.measureText(txt).width;      // 文字實際寬度
 	const padX = fontPx*0.2;                         // 左右 padding（字高 0.2）
 	const padY = fontPx*0.2;                         // 上下 padding（字高 0.2）
 	const cw = context.canvas.width;
 	const ch = context.canvas.height;
 	const margin = 2;
-	// 水平位置：預設零件右側；寬度超出畫布右緣 → 翻到零件左側；仍超出就收到邊界內
+	// 兜底：極端長文字若超出右緣則收進邊界（正常由預留帶容納，維持在零件右側）
 	const wNeed = tw + padX*2;
-	if (x + wNeed + margin > cw) {
-	    x = icon.x*DPR - wNeed - margin;
-	    if (x < margin) x = margin;
-	}
+	if (x + wNeed + margin > cw) x = cw - wNeed - margin;
+	if (x < margin) x = margin;
 	// 垂直位置（baseline）：頂/底超出畫布時收進邊界
 	let baseY = y + h*0.79;
 	if (baseY - fontPx - padY < margin) baseY = fontPx + padY + margin;
@@ -299,7 +302,7 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
 	context.beginPath();
 	context.fillStyle = "#CFF";
 	if(icon.desc && icon.desc.startsWith('Technic Axle')) {
-	    // 圓形底：以文字中心為圓心，半徑 = max(文字寬, 字高)/2 + padding；圓心收進畫布
+	    // 圓形底：以文字中心為圓心，半徑 = max(文字寬, 字高)/2 + padding
 	    const rad = Math.max(tw, fontPx)/2 + padX;
 	    let cx = x + tw/2;
 	    cx = Math.min(Math.max(cx, rad + margin), cw - rad - margin);
