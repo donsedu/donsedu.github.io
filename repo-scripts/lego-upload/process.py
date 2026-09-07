@@ -158,7 +158,7 @@ def main():
     recent = index[:3]
     cards = []
     for m in recent:
-        cards.append(f'''    <a class="card" href="custom_instructions.htm?model={m['file'][:-4]}">
+        cards.append(f'''    <a class="card" href="custom_instructions.htm?model={m['file'][:-4]}&_t={int(datetime.now(timezone.utc).timestamp())}">
       <img class="thumb" src="thumbnails/{m['file'][:-4]}.png?v={int(datetime.now(timezone.utc).timestamp())}" alt="{m['name']}">
       <div class="card-body">
         <div class="card-name">{m['name']}</div>
