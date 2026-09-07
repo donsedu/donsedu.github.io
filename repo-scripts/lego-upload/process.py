@@ -76,7 +76,7 @@ def main():
     name_m = re.search(r'0 Name:\s*(.+)', content)
     raw_name = name_m.group(1).strip() if name_m else os.path.splitext(os.path.basename(io_path))[0]
     fp, parts, steps = fp_mod.fingerprint(model_ldr)
-    safe = safe_filename(raw_name)
+    safe = safe_filename(raw_name).lower()  # 小寫：buildinginstructions.js idToUrl 對非 .dat 統一 lower → 大小寫敏感 FS（Linux）需檔名小寫
     ldr_file = safe + '.ldr'
     log(f'📦 模型: {raw_name} | {sum(parts.values())} 零件 / {steps} 步驟')
     log(f'🔍 指紋: {fp}')
