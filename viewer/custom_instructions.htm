@@ -488,10 +488,14 @@
       // 禁用 EffectComposer（無頭/部分環境 OutlinePass 會導致畫面空白）
       manager.composer = null;
       // 包裝 onWindowResize：它會重建 composer（OutlinePass），覆蓋回 null 強制直接渲染
+      // resize/手機旋轉時 updateViewPort 會把相機拉遠（10×stepHandler bounds）並重開
+      // viewOffset → 模型被推出畫面（tri 剩 1）。origResize 後必須用真實 mesh box
+      // 重新 fit + 清 viewOffset，模型才不會消失。
       const origResize = manager.onWindowResize.bind(manager);
       manager.onWindowResize = function(force) {
         origResize(force);
         manager.composer = null;
+        fitCamera();
       };
       // 包裝 updateUIComponents：它會用步驟定義的背景色覆蓋，固定為灰色
       const origUI = manager.updateUIComponents.bind(manager);
