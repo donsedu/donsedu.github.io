@@ -270,27 +270,37 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
         }
         this.clickMap.forEach(drawMultiplier);
     }
-    // Draw Annotation:（零件長度文字：字體約 textHeight*0.42，比 1/3 大、清晰可讀）
-    context.font = parseInt(textHeight*0.42*DPR) + "px monospace";
+    // Draw Annotation:（零件長度文字）
+    // 字體大小與數量標籤(2x)相同；外框/圓形底以文字實際寬度 + padding 自動調整，
+    // 不同位數（1、6、5.5）都會剛好包住數字。
+    context.font = parseInt(textHeight*0.55*DPR) + "px sans-serif";
     this.clickMap.filter(icon => icon.annotation).forEach(icon => {
-	let len = icon.annotation.length;
 	let x = (icon.x+icon.FULL_DX+1)*DPR;
 	let y = (icon.y+icon.ANNO_Y)*DPR;
-	let w = (len*textHeight*0.27)*DPR;
 	let h = textHeight*DPR;
+	const txt = icon.annotation;
+	const fontPx = parseInt(textHeight*0.55*DPR);
+	const tw = context.measureText(txt).width;      // 文字實際寬度
+	const padX = fontPx*0.6;                         // 左右 padding
+	const padY = fontPx*0.35;                         // 上下 padding
+	const baseY = y + h*0.79;                         // 文字 baseline（維持原垂直位置）
 	context.beginPath();
 	context.fillStyle = "#CFF";
 	if(icon.desc && icon.desc.startsWith('Technic Axle')) {
-	    context.arc(x+w*0.45, y+h*0.55, h*(0.08 + len*0.095), 0, 2*Math.PI, false);
+	    // 圓形底：以文字中心為圓心，半徑 = max(文字寬, 字高)/2 + padding
+	    const cx = x + tw/2;
+	    const cy = baseY - fontPx*0.45;
+	    const rad = Math.max(tw, fontPx)/2 + padX;
+	    context.arc(cx, cy, rad, 0, 2*Math.PI, false);
         }
 	else {
-	    context.rect(x, y, w, h);
+	    // 方框底：文字寬 + 左右 padding、字高 + 上下 padding
+	    context.rect(x - padX, baseY - fontPx - padY, tw + padX*2, fontPx + padY*2);
         }
 	context.fill();
 	context.stroke();
 	context.fillStyle = "#25E";
-	y += textHeight*DPR*0.79;
-	context.fillText(icon.annotation, x, y);
+	context.fillText(txt, x, baseY);
     });
     // Draw highlight for ghosted parts:
     if(this.showEditor) {
