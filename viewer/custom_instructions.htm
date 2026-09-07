@@ -408,22 +408,25 @@
 
 <script>
   // ===== 模型選擇（?model= 參數可切換）=====
+  // cacheBust：每日一換。Cloudflare 會快取 404（negative cache），模型 URL 無版本參數時
+  // 部署前的 404 會卡在使用者端 CF 節點 → 一直「模型載入中」。加日期版本讓 URL 每天更新。
+  var cacheBust = 'v=' + Math.floor(Date.now() / 86400000);
   var model = 'models/corvette_full.mpd';
   var modelName = 'Corvette 跑車';
   var params = new URLSearchParams(location.search);
   var pModel = params.get('model');
   if (pModel === 'crossbow') {
-    model = 'models/crossbow.ldr';
+    model = 'models/crossbow.ldr?' + cacheBust;
     modelName = 'SPM-9686 十字弓';
   } else if (pModel === 'crossbow_v2') {
-    model = 'models/crossbow_v2_fixed.ldr';
+    model = 'models/crossbow_v2_fixed.ldr?' + cacheBust;
     modelName = 'SPM-9686 十字弓 V2（21 步驟）';
   } else if (pModel) {
     // 通用 fallback：?model=<name> 直接對應 models/<name>.ldr（上傳流程自動使用）
-    model = 'models/' + pModel + '.ldr';
+    model = 'models/' + pModel + '.ldr?' + cacheBust;
     modelName = pModel;
   } else {
-    model = 'models/crossbow_v2_fixed.ldr';
+    model = 'models/crossbow_v2_fixed.ldr?' + cacheBust;
     modelName = 'SPM-9686 十字弓 V2';
   }
 
