@@ -22,6 +22,26 @@ def fix_submodel_case(content):
     """
     return re.sub(r'submodel group (\d)', lambda m: f'SubModel Group {m.group(1)}', content)
 
+def ensure_mpd(content):
+    """若 model.ldr 非 MPD（無 0 FILE 宣告），包成 MPD 主檔。
+
+    buildinginstructions.js 對無 FILE 的純 LDraw：parse 的 defaultID = 完整
+    model URL（含原始大寫，如 models/ESM-9656-xxx.ldr），但 LDRPartDescription
+    建構時 this.ID = ID.toLowerCase() → getPartType 找不到 partTypes key
+    （key 保留大寫）→ StepHandler 收到 null → crash「Cannot read properties
+    of null (reading 'steps')」。包成 MPD 後 FILE 名在 parse 時統一
+    toLowerCase，主模型 key 與查詢一致。
+    """
+    if re.search(r'^0 FILE\b', content, re.M):
+        return content  # 已是 MPD，不需包裝
+    content = content.lstrip('\ufeff')  # BOM 移除，改由輸出檔頭統一寫
+    name_m = re.search(r'^0 Name:\s*(.+)', content, re.M)
+    fname = name_m.group(1).strip() if name_m else 'model'
+    fname = re.sub(r'[^\w\-.\u4e00-\u9fff ]+', '_', fname).strip() or 'model'
+    return ('0 FILE ' + fname + '\r\n'
+            + content.rstrip('\r\n') + '\r\n'
+            + '0 NOFILE\r\n')
+
 def convert(io_path, out_dir=None):
     io_path = os.path.abspath(io_path)
     if not os.path.exists(io_path):
@@ -64,14 +84,14 @@ def convert(io_path, out_dir=None):
         print("❌ 沒有 model.ldr（可能不是有效的 .io 檔）")
         return None
 
-    # 修正子模型大小寫
+    # 修正子模型大小寫 + 非 MPD 包裝（buildinginstructions.js 需要 0 FILE 主檔）
     with open(model_ldr, encoding='utf-8-sig') as f:
         content = f.read()
-    fixed = fix_submodel_case(content)
+    fixed = ensure_mpd(fix_submodel_case(content))
     if fixed != content:
         with open(model_ldr, 'w', encoding='utf-8') as f:
             f.write(fixed)
-        print("  ✅ 子模型大小寫已修正")
+        print("  ✅ 子模型大小寫 / MPD 結構已修正")
 
     # 輸出摘要
     parts = [l for l in content.split('\n') if l.strip() and not l.startswith('0')]
