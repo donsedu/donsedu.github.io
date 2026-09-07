@@ -257,29 +257,31 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
     context.fillStyle = "#000";
     context.lineWidth = "1";
     if(this.groupParts) {
-        context.font = parseInt(textHeight*1.1*DPR) + "px sans-serif";
+        // 數量字體縮為一半（textHeight*1.1 → *0.55）
+        context.font = parseInt(textHeight*0.55*DPR) + "px sans-serif";
         context.fillStyle = "black";
         function drawMultiplier(icon) {
             let x = icon.x * DPR;
             let y = (icon.y + icon.MULT_Y) * DPR;
             let w = icon.MULT_DX * DPR;
             let h = textHeight * DPR;
-            context.fillText(icon.mult + "x", x, y + h*0.84); // *0.84 to move a bit up from lower line.
+            // 數量文字 y 基準也跟著縮（0.84 → 0.92，貼近零件下緣）
+            context.fillText(icon.mult + "x", x, y + h*0.92); // *0.92 to move a bit up from lower line.
         }
         this.clickMap.forEach(drawMultiplier);
     }
-    // Draw Annotation:
-    context.font = parseInt(textHeight*0.8*DPR) + "px monospace";
+    // Draw Annotation:（零件長度文字，字體縮為原本 1/3）
+    context.font = parseInt(textHeight*0.8*DPR/3) + "px monospace";
     this.clickMap.filter(icon => icon.annotation).forEach(icon => {
 	let len = icon.annotation.length;
 	let x = (icon.x+icon.FULL_DX+1)*DPR;
 	let y = (icon.y+icon.ANNO_Y)*DPR;
-	let w = (len*textHeight*0.54)*DPR;
+	let w = (len*textHeight*0.54/3)*DPR;
 	let h = textHeight*DPR;
 	context.beginPath();
 	context.fillStyle = "#CFF";
 	if(icon.desc && icon.desc.startsWith('Technic Axle')) {
-	    context.arc(x+w*0.45, y+h*0.55, h*(0.15 + len*0.18), 0, 2*Math.PI, false);
+	    context.arc(x+w*0.45, y+h*0.55, h*(0.15 + len*0.18)/3, 0, 2*Math.PI, false);
         }
 	else {
 	    context.rect(x, y, w, h);

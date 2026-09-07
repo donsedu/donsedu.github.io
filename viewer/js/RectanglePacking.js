@@ -16,7 +16,8 @@ Algorithm.PackPlis = function(fillHeight, maxWidth, maxHeight, plis, textHeight)
 	return [0,0]; // Nothing to pack.
     }
     const WIDTH_ADD = 4; // Spacing between columns.
-    const TEXT_WIDTH_TO_HEIGHT_RATIO = 0.6;
+    // 數量文字寬度比例：0.6 → 0.2（長度縮為 1/3）
+    const TEXT_WIDTH_TO_HEIGHT_RATIO = 0.2;
 
     // Placement of text:
     plis.forEach(r => r.MULT_DX = (1+(''+r.mult).length) * textHeight * TEXT_WIDTH_TO_HEIGHT_RATIO);
