@@ -369,6 +369,20 @@
     <div class="loading-text">模型載入中…</div>
   </div>
 
+  <!-- ===== WebGL 不可用提示（由 JS 檢查後顯示）===== -->
+  <div id="webgl_error" style="display:none; position:absolute; inset:0; background:rgba(10,15,34,0.95); color:#fff; z-index:99; display:none; align-items:center; justify-content:center; text-align:center; padding:40px; font-size:15px; line-height:1.8;">
+    <div>
+      <div style="font-size:42px; margin-bottom:12px;">🧊</div>
+      <div style="font-size:19px; font-weight:700; margin-bottom:10px;">無法啟動 3D 檢視器</div>
+      你的瀏覽器沒有啟用 WebGL（3D 繪圖功能），所以模型無法顯示。<br><br>
+      <b>Chrome 修復方式：</b><br>
+      ① 網址列輸入 <code style="background:#ffffff22; padding:2px 8px; border-radius:6px;">chrome://settings/system</code><br>
+      ② 開啟「使用硬體加速（在可用時）」<br>
+      ③ 按「重新啟動」，再回來重新整理本頁<br><br>
+      <span style="opacity:.65; font-size:13px;">若已是開啟狀態，請到 chrome://gpu 確認 WebGL 狀態，或更新顯示卡驅動。</span>
+    </div>
+  </div>
+
 </div>
 
 <!-- ===== buildinginstructions.js 依賴 ===== -->
@@ -649,7 +663,23 @@
   // 定期更新進度（manager 可能自行變動步驟）
   setInterval(updateProgress, 800);
 
-  main();
+  // WebGL 可用性檢查：context 建立失敗會讓 three.js throw → 永遠卡「載入中」
+  // （Chrome 硬體加速關閉 / GPU blocklist 時常見）。先檢查並顯示清楚提示。
+  function webglAvailable() {
+    try {
+      var c = document.createElement('canvas');
+      return !!(window.WebGLRenderingContext &&
+        (c.getContext('webgl') || c.getContext('experimental-webgl')));
+    } catch (e) { return false; }
+  }
+  if (!webglAvailable()) {
+    var _ov = document.getElementById('loading_overlay');
+    if (_ov) _ov.style.display = 'none';
+    var _we = document.getElementById('webgl_error');
+    if (_we) _we.style.display = 'flex';
+  } else {
+    main();
+  }
 </script>
 </body>
 </html>
