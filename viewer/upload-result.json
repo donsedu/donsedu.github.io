@@ -1,7 +1,5 @@
 {
- "status": "duplicate",
- "name": "SPM-9686-十字弓Crossbow-V2",
- "existing": "SPM-9686 十字弓 V2",
- "fingerprint": "8136601b9a2996920e7db858",
- "at": "2026-09-07T16:17:00.630507+00:00"
+ "status": "thumb_failed",
+ "message": "縮圖產生失敗: thumb failed",
+ "at": "2026-09-07T16:37:54.724840+00:00"
 }
