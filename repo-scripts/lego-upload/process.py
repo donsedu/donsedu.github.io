@@ -159,7 +159,7 @@ def main():
     cards = []
     for m in recent:
         cards.append(f'''    <a class="card" href="custom_instructions.htm?model={m['file'][:-4]}">
-      <img class="thumb" src="thumbnails/{m['file'][:-4]}.png" alt="{m['name']}">
+      <img class="thumb" src="thumbnails/{m['file'][:-4]}.png?v={int(datetime.now(timezone.utc).timestamp())}" alt="{m['name']}">
       <div class="card-body">
         <div class="card-name">{m['name']}</div>
         <div class="card-meta"><span class="pill">🧱 {m['steps']} 步驟</span><span class="pill">📋 互動 3D</span></div>
