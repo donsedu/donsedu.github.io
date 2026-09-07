@@ -75,11 +75,16 @@
     flex: 1;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
   /* 3D 模型視窗（保留 buildinginstructions.js 需要的 DOM） */
   #main_canvas_holder {
-    position: absolute !important;
-    inset: 0 !important;
+    position: relative !important;
+    inset: auto !important;
+    flex: 1 1 auto;
+    min-height: 0;
     background: transparent !important;
   }
   #main_canvas {
@@ -91,27 +96,30 @@
     z-index: 20 !important;
   }
 
-  /* ===== 控制面板（右側浮層）===== */
+  /* ===== 控制面板（底部 dock）===== */
   .control-panel {
-    position: absolute;
-    right: 24px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 280px;
-    background: rgba(13, 19, 38, 0.92);
+    position: static;
+    width: 100%;
+    order: 3;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 14px 24px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: rgba(13, 19, 38, 0.94);
     backdrop-filter: blur(16px);
-    border: 1px solid rgba(120, 160, 255, 0.25);
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    z-index: 50;
+    border-top: 1px solid rgba(120, 160, 255, 0.18);
+    z-index: 60;
   }
   .step-indicator {
-    text-align: center;
-    margin-bottom: 18px;
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    flex-shrink: 0;
   }
   .step-indicator .step-num {
-    font-size: 42px;
+    font-size: 30px;
     font-weight: 900;
     background: linear-gradient(135deg, #f6ad55, #ffd9a0);
     -webkit-background-clip: text;
@@ -119,15 +127,16 @@
     line-height: 1.1;
   }
   .step-indicator .step-total {
-    font-size: 14px;
+    font-size: 13px;
     color: #8aa0c8;
   }
   .progress-track {
+    flex: 1;
+    max-width: 320px;
     height: 6px;
     background: rgba(120, 160, 255, 0.15);
     border-radius: 999px;
     overflow: hidden;
-    margin: 10px 0 20px;
   }
   .progress-fill {
     height: 100%;
@@ -138,17 +147,16 @@
   }
   .btn-row {
     display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
+    gap: 8px;
+    flex: 0 0 auto;
   }
   .view-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin-bottom: 12px;
+    display: flex;
+    gap: 5px;
+    flex: 0 0 auto;
   }
   .view-btn {
-    padding: 8px 0;
+    padding: 8px 10px;
     border: 1px solid rgba(120, 160, 255, 0.25);
     border-radius: 10px;
     background: rgba(120, 160, 255, 0.08);
@@ -158,6 +166,7 @@
     cursor: pointer;
     font-family: inherit;
     transition: all 0.2s;
+    white-space: nowrap;
   }
   .view-btn:hover {
     background: rgba(120, 160, 255, 0.2);
@@ -169,15 +178,15 @@
     border-color: transparent;
   }
   .nav-btn {
-    flex: 1;
-    padding: 12px 0;
+    padding: 10px 16px;
     border: none;
-    border-radius: 14px;
-    font-size: 15px;
+    border-radius: 12px;
+    font-size: 14px;
     font-weight: 800;
     cursor: pointer;
     transition: all 0.2s;
     font-family: inherit;
+    white-space: nowrap;
   }
   .nav-btn:hover { transform: translateY(-1px); }
   .nav-btn:active { transform: translateY(0); }
@@ -192,11 +201,11 @@
     box-shadow: 0 6px 20px rgba(221, 107, 32, 0.35);
   }
   .btn-play {
-    width: 100%;
-    padding: 12px 0;
+    width: auto;
+    padding: 10px 16px;
     border: none;
-    border-radius: 14px;
-    font-size: 15px;
+    border-radius: 12px;
+    font-size: 14px;
     font-weight: 800;
     cursor: pointer;
     font-family: inherit;
@@ -204,6 +213,7 @@
     color: #7ce8a8;
     border: 1px solid rgba(72, 200, 120, 0.3);
     transition: all 0.2s;
+    white-space: nowrap;
   }
   .btn-play.playing {
     background: rgba(220, 80, 80, 0.2);
@@ -211,20 +221,16 @@
     border-color: rgba(220, 80, 80, 0.4);
   }
   .hint {
-    text-align: center;
-    font-size: 12px;
-    color: #5a7098;
-    margin-top: 14px;
-    line-height: 1.7;
+    display: none;
   }
 
-  /* ===== PLI 零件清單（左上角固定，白底）===== */
+  /* ===== PLI 零件清單（左下角，白底）===== */
   #pli {
-    position: fixed !important;
-    top: 80px !important;
+    position: absolute !important;
+    top: auto !important;
     left: 24px !important;
     right: auto !important;
-    bottom: auto !important;
+    bottom: 16px !important;
     z-index: 60 !important;
     background: #ffffff !important;
     border-radius: 12px !important;
@@ -339,14 +345,14 @@
     .view-btn { padding: 9px 0; font-size: 13px; }
     .hint { display: none; }
 
-    /* PLI 常駐縮小：貼 3D 區左下（dock 上方），不蓋中央模型 */
+    /* PLI 常駐：手機以較小尺寸重繪（見 updatePLI），此處不 scale 避免爆螢幕 */
     #pli {
       position: absolute !important;
       top: auto !important;
       left: 8px !important;
       right: auto !important;
       bottom: 8px !important;
-      transform: scale(1.1);
+      transform: scale(1);
       transform-origin: bottom left;
       max-height: 46vh !important;
       border-radius: 10px !important;
@@ -422,7 +428,7 @@
       left: 6px !important;
       right: auto !important;
       bottom: 6px !important;
-      transform: scale(0.84);
+      transform: scale(1);
       transform-origin: bottom left;
       max-height: 40vh !important;
       border-radius: 8px !important;
@@ -691,9 +697,16 @@
           e.style.display = 'block';
           try {
             const step = manager.stepHandler.getCurrentStep();
-            const w = manager.pliW || 360;
-            const h = manager.pliH || 500;
-            manager.pliBuilder.drawPLIForStep(true, step, w, h, true);
+            // RWD：手機/小平板用較小尺寸繪製 PLI（否則 360px 寬繪製再 scale 會爆螢幕）
+            let pw, ph;
+            if (window.innerWidth <= 950) {
+              if (window.innerHeight > window.innerWidth) { pw = 170; ph = 260; }  // 直放
+              else { pw = 110; ph = 170; }  // 橫放
+            } else {
+              pw = manager.pliW || 360;
+              ph = manager.pliH || 500;
+            }
+            manager.pliBuilder.drawPLIForStep(true, step, pw, ph, true);
           } catch(err) {}
         }
         return ret;
