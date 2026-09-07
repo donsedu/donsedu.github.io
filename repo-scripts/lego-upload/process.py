@@ -183,7 +183,10 @@ def main():
     return 0
 
 def _page_html(cards):
-    return f'''<!DOCTYPE html>
+    return _PAGE_TEMPLATE.replace('__CARDS__', chr(10).join(cards))
+
+
+_PAGE_TEMPLATE = """<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
@@ -191,73 +194,191 @@ def _page_html(cards):
 <meta name="robots" content="noindex, nofollow">
 <title>LEGO 組裝圖</title>
 <style>
-  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-  body {{
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
     font-family: 'Noto Sans TC', 'PingFang TC', sans-serif;
     background: #14161a; color: #e8e6e1;
     min-height: 100vh;
-  }}
-  .wrap {{ max-width: 960px; margin: 0 auto; padding: 48px 24px; }}
-  .top {{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }}
-  h1 {{ font-size: 22px; font-weight: 900; letter-spacing: 1px; }}
-  .sub {{ color: #8b8f98; font-size: 13px; margin-bottom: 28px; }}
-  .upload-btn {{
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  h1 { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
+  .sub { color: #8b8f98; font-size: 13px; margin-bottom: 28px; }
+  .upload-btn {
     display: inline-flex; align-items: center; gap: 6px;
     background: #e8722a; color: #fff; text-decoration: none;
     font-size: 14px; font-weight: 800; padding: 8px 18px; border-radius: 999px;
     transition: 0.2s; border: none; cursor: pointer;
-  }}
-  .upload-btn:hover {{ background: #d4621f; }}
-  .banner {{
+  }
+  .upload-btn:hover { background: #d4621f; }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(10,12,16,0.75);
+    display: none; align-items: center; justify-content: center; z-index: 50;
+  }
+  .overlay.show { display: flex; }
+  .panel {
+    background: #1e2126; border: 1px solid #2a2e35; border-radius: 16px;
+    padding: 28px; width: min(460px, 90vw);
+  }
+  .panel h2 { font-size: 18px; margin-bottom: 6px; }
+  .panel .p-sub { color: #8b8f98; font-size: 12px; margin-bottom: 18px; }
+  .dropzone {
+    border: 2px dashed #3a3f48; border-radius: 12px; padding: 36px 16px;
+    text-align: center; color: #8b8f98; font-size: 14px; cursor: pointer;
+    transition: 0.2s;
+  }
+  .dropzone:hover, .dropzone.drag { border-color: #e8722a; color: #e8e6e1; background: #262a31; }
+  .dropzone .big { font-size: 34px; display: block; margin-bottom: 8px; }
+  .file-info { margin-top: 12px; font-size: 13px; color: #e8e6e1; display: none; }
+  .progress-wrap { display: none; margin-top: 16px; }
+  .progress-bar { height: 6px; background: #2a2e35; border-radius: 3px; overflow: hidden; }
+  .progress-bar .fill { height: 100%; width: 0%; background: #e8722a; transition: width 0.3s; }
+  .status-text { margin-top: 10px; font-size: 13px; min-height: 18px; }
+  .status-text.ok { color: #8fd6a4; }
+  .status-text.err { color: #e0a08f; }
+  .panel-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; }
+  .btn {
+    border: none; border-radius: 999px; padding: 8px 16px; font-size: 13px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .btn-primary { background: #e8722a; color: #fff; }
+  .btn-ghost { background: #2a2e35; color: #8b8f98; }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .banner {
     border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; display: none;
-  }}
-  .banner.ok {{ background: #1d3524; border: 1px solid #2d5a3a; color: #8fd6a4; display: block; }}
-  .banner.dup {{ background: #3a2b1d; border: 1px solid #5a4a2d; color: #e0c68f; display: block; }}
-  .banner.err {{ background: #3a1d1d; border: 1px solid #5a2d2d; color: #e0a08f; display: block; }}
-  .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }}
-  .card {{
+  }
+  .banner.ok { background: #1d3524; border: 1px solid #2d5a3a; color: #8fd6a4; display: block; }
+  .banner.dup { background: #3a2b1d; border: 1px solid #5a4a2d; color: #e0c68f; display: block; }
+  .banner.err { background: #3a1d1d; border: 1px solid #5a2d2d; color: #e0a08f; display: block; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+  .card {
     background: #1e2126; border-radius: 14px; overflow: hidden;
     border: 1px solid #2a2e35; transition: 0.2s; text-decoration: none; color: inherit;
     display: block;
-  }}
-  .card:hover {{ transform: translateY(-3px); border-color: #e8722a; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }}
-  .thumb {{ width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #b0b4bc; display: block; }}
-  .card-body {{ padding: 14px 16px; }}
-  .card-name {{ font-size: 15px; font-weight: 800; margin-bottom: 6px; }}
-  .card-meta {{ font-size: 12px; color: #8b8f98; }}
-  .card-meta .pill {{ background: #2a2e35; padding: 2px 10px; border-radius: 999px; margin-right: 6px; }}
+  }
+  .card:hover { transform: translateY(-3px); border-color: #e8722a; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #b0b4bc; display: block; }
+  .card-body { padding: 14px 16px; }
+  .card-name { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+  .card-meta { font-size: 12px; color: #8b8f98; }
+  .card-meta .pill { background: #2a2e35; padding: 2px 10px; border-radius: 999px; margin-right: 6px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
     <h1>🧱 LEGO 組裝圖</h1>
-    <a class="upload-btn" href="https://github.com/donsedu/donsedu.github.io/upload/main/uploads" target="_blank">＋ 上傳組裝圖</a>
+    <button class="upload-btn" id="btnUpload">＋ 上傳組裝圖</button>
   </div>
   <div class="sub">最近上傳的組裝圖（點開可 3D 旋轉、逐步組裝）</div>
   <div id="banner" class="banner"></div>
   <div class="grid">
-{chr(10).join(cards)}
+__CARDS__
+  </div>
+</div>
+
+<div class="overlay" id="uploadOverlay">
+  <div class="panel">
+    <h2>上傳組裝圖</h2>
+    <div class="p-sub">支援 Bricklink Studio 的 .io 檔（20MB 內）</div>
+    <div class="dropzone" id="dropzone">
+      <span class="big">📦</span>
+      <div>拖曳 .io 檔到這裡<br>或 <b style="color:#e8722a">點選檔案</b></div>
+    </div>
+    <input type="file" id="fileInput" accept=".io" hidden>
+    <div class="file-info" id="fileInfo"></div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+    </div>
+    <div class="status-text" id="statusText"></div>
+    <div class="panel-actions">
+      <button class="btn btn-ghost" id="btnCancel">取消</button>
+      <button class="btn btn-primary" id="btnSend" disabled>送出上傳</button>
+    </div>
   </div>
 </div>
 <script>
-fetch('upload-result.json', {{ cache: 'no-store' }}).then(r => r.json()).then(d => {{
-  const b = document.getElementById('banner');
-  if (d.status === 'ok') {{
-    b.className = 'banner ok';
-    b.textContent = '✅ 「' + d.name + '」已上線！重整後的卡片就是它。';
-  }} else if (d.status === 'duplicate') {{
-    b.className = 'banner dup';
-    b.textContent = '⚠️ 剛剛上傳的「' + d.name + '」與已存在的「' + d.existing + '」相同——未重複加入。';
-  }} else if (d.status === 'conversion_failed' || d.status === 'parts_missing' || d.status === 'thumb_failed') {{
-    b.className = 'banner err';
-    b.textContent = '❌ 上傳處理失敗：' + (d.message || '不明原因');
-  }}
-}}).catch(() => {{}});
+const WORKER_URL = '__WORKER_URL__';
+const banner = document.getElementById('banner');
+const overlay = document.getElementById('uploadOverlay');
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const statusText = document.getElementById('statusText');
+const btnSend = document.getElementById('btnSend');
+const btnCancel = document.getElementById('btnCancel');
+let selectedFile = null;
+
+document.getElementById('btnUpload').onclick = () => { overlay.classList.add('show'); };
+btnCancel.onclick = () => { overlay.classList.remove('show'); resetPanel(); };
+dropzone.onclick = () => fileInput.click();
+fileInput.onchange = () => { if (fileInput.files[0]) pickFile(fileInput.files[0]); };
+dropzone.ondragover = e => { e.preventDefault(); dropzone.classList.add('drag'); };
+dropzone.ondragleave = () => dropzone.classList.remove('drag');
+dropzone.ondrop = e => {
+  e.preventDefault(); dropzone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) pickFile(e.dataTransfer.files[0]);
+};
+function pickFile(f) {
+  if (!/\.io$/i.test(f.name)) { showStatus('請選擇 .io 檔（Bricklink Studio 匯出）', 'err'); return; }
+  if (f.size > 20 * 1024 * 1024) { showStatus('檔案超過 20MB', 'err'); return; }
+  selectedFile = f;
+  fileInfo.style.display = 'block';
+  fileInfo.textContent = '📄 ' + f.name + '（' + (f.size / 1024 / 1024).toFixed(1) + ' MB）';
+  btnSend.disabled = false;
+  showStatus('');
+}
+btnSend.onclick = async () => {
+  if (!selectedFile) return;
+  btnSend.disabled = true; btnCancel.disabled = true;
+  progressWrap.style.display = 'block';
+  showStatus('上傳中…');
+  const form = new FormData();
+  form.append('file', selectedFile);
+  try {
+    const res = await fetch(WORKER_URL, { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.ok) {
+      showStatus('✅ ' + data.message, 'ok');
+      setTimeout(() => { overlay.classList.remove('show'); resetPanel(); location.reload(); }, 4000);
+    } else {
+      showStatus('❌ ' + (data.message || '上傳失敗'), 'err');
+      btnSend.disabled = false; btnCancel.disabled = false;
+    }
+  } catch (e) {
+    showStatus('❌ 無法連到上傳伺服器（' + e.message + '）', 'err');
+    btnSend.disabled = false; btnCancel.disabled = false;
+  }
+};
+function showStatus(msg, cls) {
+  statusText.textContent = msg;
+  statusText.className = 'status-text' + (cls ? ' ' + cls : '');
+}
+function resetPanel() {
+  selectedFile = null; fileInput.value = '';
+  fileInfo.style.display = 'none'; fileInfo.textContent = '';
+  progressWrap.style.display = 'none'; progressFill.style.width = '0%';
+  statusText.textContent = ''; statusText.className = 'status-text';
+  btnSend.disabled = true; btnCancel.disabled = false;
+}
+fetch('upload-result.json', { cache: 'no-store' }).then(r => r.json()).then(d => {
+  if (d.status === 'ok') {
+    banner.className = 'banner ok';
+    banner.textContent = '✅ 「' + d.name + '」已上線！重整後的卡片就是它。';
+  } else if (d.status === 'duplicate') {
+    banner.className = 'banner dup';
+    banner.textContent = '⚠️ 剛剛上傳的「' + d.name + '」與已存在的「' + d.existing + '」相同——未重複加入。';
+  } else if (d.status === 'conversion_failed' || d.status === 'parts_missing' || d.status === 'thumb_failed') {
+    banner.className = 'banner err';
+    banner.textContent = '❌ 上傳處理失敗：' + (d.message || '不明原因');
+  }
+}).catch(() => {});
 </script>
 </body>
 </html>
-'''
+"""
 
 def _write_json(path, data):
     with open(path, 'w', encoding='utf-8') as f:
