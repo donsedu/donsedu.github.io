@@ -270,18 +270,18 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
         }
         this.clickMap.forEach(drawMultiplier);
     }
-    // Draw Annotation:（零件長度文字，字體縮為原本 1/3）
-    context.font = parseInt(textHeight*0.8*DPR/3) + "px monospace";
+    // Draw Annotation:（零件長度文字：字體約 textHeight*0.42，比 1/3 大、清晰可讀）
+    context.font = parseInt(textHeight*0.42*DPR) + "px monospace";
     this.clickMap.filter(icon => icon.annotation).forEach(icon => {
 	let len = icon.annotation.length;
 	let x = (icon.x+icon.FULL_DX+1)*DPR;
 	let y = (icon.y+icon.ANNO_Y)*DPR;
-	let w = (len*textHeight*0.54/3)*DPR;
+	let w = (len*textHeight*0.27)*DPR;
 	let h = textHeight*DPR;
 	context.beginPath();
 	context.fillStyle = "#CFF";
 	if(icon.desc && icon.desc.startsWith('Technic Axle')) {
-	    context.arc(x+w*0.45, y+h*0.55, h*(0.15 + len*0.18)/3, 0, 2*Math.PI, false);
+	    context.arc(x+w*0.45, y+h*0.55, h*(0.08 + len*0.095), 0, 2*Math.PI, false);
         }
 	else {
 	    context.rect(x, y, w, h);
