@@ -210,10 +210,10 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
     // Find, sort and set up icons to show:
     this.createClickMap(step);
     let textHeight = (!fillHeight ? maxHeight : maxWidth) / Math.sqrt(this.clickMap.length) * 0.19;
-    // 固定字體：不隨零件數/步驟變動（各步驟字體一致）；基準依 PLI 寬度
-    const baseFont = Math.max(12, Math.round(maxWidth*0.045));
-    // 右側預留帶：容納零件長度數字框/圓形底（PLI 撐開，保持在零件右下方不被切）
-    const annotationReserve = Math.ceil(maxWidth*0.2);
+    // 固定字體：不隨零件數/步驟變動（各步驟字體一致）；桌面 20px / 手機 18px
+    const baseFont = maxWidth >= 260 ? 20 : 18;
+    // 右側預留帶：容納零件長度數字框/圓形底（PLI 撐開 10%，保持在零件右下方不被切）
+    const annotationReserve = Math.ceil(maxWidth*0.1);
     let [W,H] = Algorithm.PackPlis(fillHeight, maxWidth-4, maxHeight-8, this.clickMap, textHeight);
     const DPR = window.devicePixelRatio;
     if(fillHeight) {
@@ -270,8 +270,8 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
             let y = (icon.y + icon.MULT_Y) * DPR;
             let w = icon.MULT_DX * DPR;
             let h = textHeight * DPR;
-            // 數量文字 y 基準：貼近零件下緣
-            context.fillText(icon.mult + "x", x, y + h*0.92); // *0.92 to move a bit up from lower line.
+            // 數量文字 y 基準：靠近零件下緣（0.92 → 0.72）
+            context.fillText(icon.mult + "x", x, y + h*0.72);
         }
         this.clickMap.forEach(drawMultiplier);
     }

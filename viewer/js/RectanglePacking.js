@@ -90,12 +90,12 @@ Algorithm.PackPlis = function(fillHeight, maxWidth, maxHeight, plis, textHeight)
                 }
             });
 
-        let firstInColumn = 0; // Handle PLI's column byb column - end a column by moving them to align on the right side.
+        let firstInColumn = 0; // Handle PLI's column by column - end a column by reserving annotation space on the right side.
         let alignInColumn = to => {
             let maxAnno = 0;
             for(let j = firstInColumn; j < to; j++) {
                 let r2 = plis[j];
-                r2.x = w - r2.FULL_DX;
+                // 靠左對齊：保留各零件在欄內左緣起點，annotation 空間在欄右側
                 if(r2.annotation) {
                     maxAnno = Math.max(maxAnno, r2.annotation.length);
                 }
