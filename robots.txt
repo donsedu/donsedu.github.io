@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /viewer/
 
 Sitemap: https://dons.tw/sitemap.xml

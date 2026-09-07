@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LEGO 立體組裝步驟</title>
+
+<!-- buildinginstructions.js UI 樣式（PLI 定位等）-->
+<link href="css/preview.css" rel="stylesheet" type="text/css" />
+<link href="css/options.css" rel="stylesheet" type="text/css" />
+
+<!-- ====== 精緻版樣式（覆蓋預設）====== -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans TC', 'PingFang TC', sans-serif;
+    background: radial-gradient(ellipse at 30% 20%, #1b2a52 0%, #0d1326 55%, #070b18 100%);
+    color: #e8edf7;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== Header ===== */
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 28px;
+    background: rgba(13, 19, 38, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(120, 160, 255, 0.15);
+    z-index: 100;
+    flex-shrink: 0;
+  }
+  .logo-badge {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f6ad55, #dd6b20);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 16px rgba(246, 173, 85, 0.35);
+  }
+  .title-group h1 {
+    font-size: 20px;
+    font-weight: 900;
+    background: linear-gradient(90deg, #f6ad55, #ffd9a0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
+  }
+  .title-group .sub {
+    font-size: 12px;
+    color: #8aa0c8;
+    margin-top: 2px;
+  }
+  .stats {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+  }
+  .stat-pill {
+    background: rgba(120, 160, 255, 0.12);
+    border: 1px solid rgba(120, 160, 255, 0.2);
+    padding: 5px 14px;
+    border-radius: 999px;
+    color: #a8c0f0;
+  }
+  .stat-pill b { color: #f6ad55; font-weight: 800; }
+
+  /* ===== Main area ===== */
+  .main-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  /* 3D 模型視窗（保留 buildinginstructions.js 需要的 DOM） */
+  #main_canvas_holder {
+    position: absolute !important;
+    inset: 0 !important;
+    background: transparent !important;
+  }
+  #main_canvas {
+    width: 100% !important;
+    height: 100% !important;
+    background: #b0b4bc !important;
+  }
+  #instructions_decorations {
+    z-index: 20 !important;
+  }
+
+  /* ===== 控制面板（右側浮層）===== */
+  .control-panel {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 280px;
+    background: rgba(13, 19, 38, 0.92);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(120, 160, 255, 0.25);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    z-index: 50;
+  }
+  .step-indicator {
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .step-indicator .step-num {
+    font-size: 42px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #f6ad55, #ffd9a0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+  }
+  .step-indicator .step-total {
+    font-size: 14px;
+    color: #8aa0c8;
+  }
+  .progress-track {
+    height: 6px;
+    background: rgba(120, 160, 255, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 10px 0 20px;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #f6ad55, #dd6b20);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .view-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .view-btn {
+    padding: 8px 0;
+    border: 1px solid rgba(120, 160, 255, 0.25);
+    border-radius: 10px;
+    background: rgba(120, 160, 255, 0.08);
+    color: #a8c0f0;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .view-btn:hover {
+    background: rgba(120, 160, 255, 0.2);
+    color: #fff;
+  }
+  .view-btn.active {
+    background: linear-gradient(135deg, #f6ad55, #dd6b20);
+    color: #1a1206;
+    border-color: transparent;
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 12px 0;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .nav-btn:hover { transform: translateY(-1px); }
+  .nav-btn:active { transform: translateY(0); }
+  .btn-prev {
+    background: rgba(120, 160, 255, 0.15);
+    color: #a8c0f0;
+    border: 1px solid rgba(120, 160, 255, 0.3);
+  }
+  .btn-next {
+    background: linear-gradient(135deg, #f6ad55, #dd6b20);
+    color: #1a1206;
+    box-shadow: 0 6px 20px rgba(221, 107, 32, 0.35);
+  }
+  .btn-play {
+    width: 100%;
+    padding: 12px 0;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    font-family: inherit;
+    background: rgba(72, 200, 120, 0.15);
+    color: #7ce8a8;
+    border: 1px solid rgba(72, 200, 120, 0.3);
+    transition: all 0.2s;
+  }
+  .btn-play.playing {
+    background: rgba(220, 80, 80, 0.2);
+    color: #ff9090;
+    border-color: rgba(220, 80, 80, 0.4);
+  }
+  .hint {
+    text-align: center;
+    font-size: 12px;
+    color: #5a7098;
+    margin-top: 14px;
+    line-height: 1.7;
+  }
+
+  /* ===== PLI 零件清單（左上角固定，白底）===== */
+  #pli {
+    position: fixed !important;
+    top: 80px !important;
+    left: 24px !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 60 !important;
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    padding: 6px !important;
+  }
+  #pli canvas {
+    background: #ffffff !important;
+    border-radius: 8px;
+  }
+  #pli_drag_horizontal, #pli_drag_vertical {
+    z-index: 65 !important;
+  }
+
+  /* 隱藏不必要的預設 UI */
+  #options, #green, .gears, #numberOfSteps { display: none !important; }
+
+  /* ===== 載入中遮罩 ===== */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 15, 34, 0.9);
+    z-index: 200;
+    transition: opacity 0.5s;
+    pointer-events: none;
+  }
+  .loading-overlay.hidden { opacity: 0; }
+  .spinner {
+    width: 56px; height: 56px;
+    border: 4px solid rgba(120, 160, 255, 0.2);
+    border-top-color: #f6ad55;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 18px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-overlay .loading-text {
+    font-size: 15px;
+    color: #a8c0f0;
+    letter-spacing: 2px;
+  }
+</style>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header class="app-header">
+  <div class="logo-badge">🏹</div>
+  <div class="title-group">
+    <h1 id="model_title">LEGO 立體組裝步驟</h1>
+    <div class="sub">SPM-9686 互動式搭建說明</div>
+  </div>
+  <div class="stats">
+    <span class="stat-pill">🧱 <b id="stat_parts">-</b> 零件</span>
+    <span class="stat-pill">📋 <b id="stat_steps">-</b> 步驟</span>
+  </div>
+</header>
+
+<!-- ===== Main ===== -->
+<div class="main-area">
+
+  <!-- buildinginstructions.js 必要的 DOM（保留 id） -->
+  <div id="main_canvas_holder">
+    <canvas id="main_canvas"></canvas>
+    <div id="instructions_decorations">
+      <span id="empty_step">EMPTY STEP</span>
+      <canvas id="pli"></canvas>
+      <div id="pli_drag_horizontal">
+        <div id="pli_icon_right"><svg viewbox="-10,-10,20,20"><path d="M 9 6, 9 9, -9 9, -9 -9, 9 -9, 9 -6" /><line x1="0" y1="0" x2="9" y2="0" /><line x1="9" y1="0" x2="5" y2="5" /><line x1="9" y1="0" x2="5" y2="-5" /></svg></div>
+        <div id="pli_icon_left"><svg viewbox="-10,-10,20,20"><path d="M -9 6, -9 9, 9 9, 9 -9, -9 -9, -9 -6" /><line x1="0" y1="0" x2="-9" y2="0" /><line x1="-9" y1="0" x2="-5" y2="5" /><line x1="-9" y1="0" x2="-5" y2="-5" /></svg></div>
+      </div>
+      <div id="pli_drag_vertical">
+        <div id="pli_icon_down"><svg viewbox="-10,-10,20,20"><path d="M 6 9, 9 9, 9 -9, -9 -9, -9 9, -6 9" /><line x1="0" y1="0" x2="0" y2="9" /><line x1="0" y1="9" x2="5" y2="5" /><line x1="0" y1="9" x2="-5" y2="5" /></svg></div>
+        <div id="pli_icon_up"><svg viewbox="-10,-10,20,20"><path d="M 6 -9, 9 -9, 9 9, -9 9, -9 -9, -6 -9" /><line x1="0" y1="0" x2="0" y2="-9" /><line x1="0" y1="-9" x2="5" y2="-5" /><line x1="0" y1="-9" x2="-5" y2="-5" /></svg></div>
+      </div>
+      <span class="decoration_holder"><div id="multiplier">x1</div></span>
+      <span class="decoration_holder"><div id="rotator">
+        <svg viewbox="-52,-52,104,104" fill="none" stroke="black" stroke-width="12">
+          <g id="full_arrow">
+            <path id="half_arrow" d="M 25,-14 40,-10 48,-23 M 40,-10 C 30,-50 -30,-50 -40,-10 M 40,-10 Z" />
+            <g transform="scale(-1 -1)"><use xlink:href="#half_arrow"/></g>
+          </g>
+          <animateTransform xlink:href="#full_arrow" attributeName="transform" attributeType="XML" id="rotator_animation" type="rotate" from="0 0 0" to="180 0 0" dur="0.4s" begin="0" repeatCount="1" fill="freeze" />
+        </svg>
+      </div></span>
+    </div>
+
+    <div id="pli_preview_section">
+      <div id="preview_background" class="background" onclick="manager.hidePliPreview();"></div>
+      <div id="preview_holder" class="holder">
+        <div id="preview_parent"><canvas id="secondary_canvas"></canvas></div>
+        <div id="preview_info">
+          <span class="preview_info_line"><span id="preview_info_name">PART NAME</span></span>
+          <span class="preview_info_line">LDraw color: <div id="preview_info_color_ldraw">LDR COLOR</div></span>
+        </div>
+      </div>
+    </div>
+    <div id="done_section">
+      <div id="done_background" onclick="manager.hideDone();"></div>
+      <div id="done_holder" class="holder"></div>
+    </div>
+    <div id="color_picker">
+      <div id="color_picker_background" class="background" onclick="$('#color_picker').hide();"></div>
+      <div id="color_picker_holder" class="holder"></div>
+    </div>
+    <div id="green"><div id="editor"></div></div>
+    <div id="options"></div>
+  </div>
+
+  <!-- ===== 控制面板 ===== -->
+  <div class="control-panel">
+    <div class="step-indicator">
+      <div class="step-num" id="current_step">1</div>
+      <div class="step-total">/ <span id="total_steps">-</span> 步驟</div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress_fill"></div></div>
+    <div class="btn-row">
+      <button class="nav-btn btn-prev" id="btn_prev">◀ 上一步</button>
+      <button class="nav-btn btn-next" id="btn_next">下一步 ▶</button>
+    </div>
+    <div class="view-row">
+      <button class="view-btn active" id="view_iso" title="等角視圖">◈ 等角</button>
+      <button class="view-btn" id="view_front" title="正面視圖">▣ 正面</button>
+      <button class="view-btn" id="view_side" title="側面視圖">▢ 側面</button>
+      <button class="view-btn" id="view_top" title="頂視圖">▤ 頂視</button>
+    </div>
+    <button class="btn-play" id="btn_play">▶ 自動播放</button>
+    <div class="hint">🖱️ 拖曳旋轉模型<br>🔍 滾輪縮放視角</div>
+  </div>
+
+  <!-- ===== 載入中 ===== -->
+  <div class="loading-overlay" id="loading_overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">模型載入中…</div>
+  </div>
+
+</div>
+
+<!-- ===== buildinginstructions.js 依賴 ===== -->
+<script src="js/jquery.min.js"></script>
+<script src="js/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/CopyShader.js"></script>
+<script src="js/Pass.js"></script>
+<script src="js/OutlinePass.js"></script>
+<script src="js/ShaderPass.js"></script>
+<script src="js/FXAAShader.js"></script>
+<script src="js/RenderPass.js"></script>
+<script src="js/MaskPass.js"></script>
+<script src="js/EffectComposer.js"></script>
+<script src="js/colors.js"></script>
+<script src="js/LDRShaders.js"></script>
+<script src="js/LDRColorMaterials.js"></script>
+<script src="js/pli.js"></script>
+<script src="js/LDRSVG.js"></script>
+<script src="js/LDROptions.js"></script>
+<script src="js/ClientStorage.js"></script>
+<script src="js/LDRGeometries.js"></script>
+<script src="js/LDRLoader.js"></script>
+<script src="js/LDRStepHandler.js"></script>
+<script src="js/RectanglePacking.js"></script>
+<script src="js/LDRPLIBuilder.js"></script>
+<script src="js/LDRPLIPreview.js"></script>
+<script src="js/LDRButtons.js"></script>
+<script src="js/LDRMeasurer.js"></script>
+<script src="js/LDRColorPicker.js"></script>
+<script src="js/LDRStepEditor.js"></script>
+<script src="js/LDRGenerator.js"></script>
+<script src="js/LDRStuds.js"></script>
+<script src="js/LDRAssemblies.js"></script>
+<script src="js/LDRInstructionsManager.js"></script>
+<script src="js/LDCadGenerator.js"></script>
+
+<script>
+  // ===== 模型選擇（?model= 參數可切換）=====
+  var model = 'models/corvette_full.mpd';
+  var modelName = 'Corvette 跑車';
+  var params = new URLSearchParams(location.search);
+  if (params.get('model') === 'crossbow') {
+    model = 'models/crossbow.ldr';
+    modelName = 'SPM-9686 十字弓';
+  }
+  if (params.get('model') === 'crossbow_v2') {
+    model = 'models/crossbow_v2_fixed.ldr';
+    modelName = 'SPM-9686 十字弓 V2（21 步驟）';
+  }
+
+  document.getElementById('model_title').textContent = modelName;
+  var manager;
+  // 保留 model 參數，避免 buildinginstructions.js 切步驟時 replaceState 丟失
+  var baseURL = 'custom_instructions.htm?model=' + (params.get('model') || '') + '&step=';
+
+  function updateProgress() {
+    if (!manager || !manager.stepHandler) return;
+    var cur = manager.currentStep || 1;
+    var total = manager.stepHandler.totalNumberOfSteps || 1;
+    document.getElementById('current_step').textContent = cur;
+    document.getElementById('total_steps').textContent = total;
+    document.getElementById('stat_steps').textContent = total;
+    document.getElementById('progress_fill').style.width = (cur / total * 100) + '%';
+  }
+
+  function main() {
+    let options = {
+      canEdit: false,
+      buildAssemblies: true,
+      key: model,
+      adPeek: 0,
+      setUpOptions: false,
+      showNumberOfSteps: true,
+      pliMaxWidthPercentage: 30,
+      pliMaxHeightPercentage: 30,
+      timestamp: '1970-01-01 00:00:00',
+      cleanUpPrimitivesAndSubParts: true
+    };
+    let step = 1;
+    manager = new LDR.InstructionsManager(model, '#', 14, null, () => {}, baseURL, step, options);
+  }
+
+  // ===== 輪詢檢查載入完成（callback 不一定觸發）=====
+  let loadedFlag = false;
+  function checkLoaded() {
+    if (loadedFlag || !manager) return;
+    if (manager.stepHandler && manager.stepHandler.totalNumberOfSteps) {
+      loadedFlag = true; // 只執行一次，避免重複 fit 覆蓋使用者拖曳
+      clearInterval(loadedTimer);
+      // 3D 視窗用中灰背景（黑/白零件都清楚），UI 保持深色
+      manager.setBackgroundColor('b0b4bc');
+      // 禁用 EffectComposer（無頭/部分環境 OutlinePass 會導致畫面空白）
+      manager.composer = null;
+      // 包裝 onWindowResize：它會重建 composer（OutlinePass），覆蓋回 null 強制直接渲染
+      const origResize = manager.onWindowResize.bind(manager);
+      manager.onWindowResize = function(force) {
+        origResize(force);
+        manager.composer = null;
+      };
+      // 包裝 updateUIComponents：它會用步驟定義的背景色覆蓋，固定為灰色
+      const origUI = manager.updateUIComponents.bind(manager);
+      manager.updateUIComponents = function(...args) {
+        origUI(...args);
+        manager.setBackgroundColor('b0b4bc');
+      };
+      // 包裝 updatePLI：強制每個步驟都顯示零件清單
+      const origPLI = manager.updatePLI.bind(manager);
+      manager.updatePLI = function(...args) {
+        const ret = origPLI(...args);
+        // origPLI 內部會重算 showPLI（某些步驟無子模型就不顯示），強制覆蓋
+        manager.showPLI = true;
+        const e = document.getElementById('pli');
+        if (e) {
+          e.style.display = 'block';
+          try {
+            const step = manager.stepHandler.getCurrentStep();
+            const w = manager.pliW || 360;
+            const h = manager.pliH || 500;
+            manager.pliBuilder.drawPLIForStep(true, step, w, h, true);
+          } catch(err) {}
+        }
+        return ret;
+      };
+      // 包裝 handleStepsWalked：每次步驟切換後重新 fit 相機（updateViewPort 會把相機拉遠）
+      const fitCamera = () => {
+        try {
+          // 用 mesh 實際世界座標（submodel 展開後位置）而非 stepHandler bounds
+          const box = new THREE.Box3();
+          manager.opaqueObject.traverse(o => {
+            if (o.isMesh && o.geometry && o.geometry.attributes && o.geometry.attributes.position) {
+              o.updateWorldMatrix(true, false);
+              box.expandByObject(o);
+            }
+          });
+          if (box.isEmpty()) return;
+          const size = box.getSize(new THREE.Vector3()).length() || 100;
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          modelCenter.copy(center);
+          modelSize = size;
+          manager.camera.position.set(center.x + size, center.y + 0.7 * size, center.z + size);
+          manager.camera.far = 2 * size;
+          manager.camera.zoom = 1.5 * window.innerWidth / size;
+          manager.camera.lookAt(center);
+          manager.camera.clearViewOffset(); // 清除 PLI 造成的視窗偏移（會把模型推出畫面）
+          manager.camera.updateProjectionMatrix();
+          manager.controls.target.copy(center);
+          manager.controls.update();
+        } catch(e) {}
+      };
+      const origHandleSteps = manager.handleStepsWalked.bind(manager);
+      manager.handleStepsWalked = function() {
+        origHandleSteps();
+        manager.composer = null;
+        fitCamera();
+        manager.render();
+      };
+      // 強制相機 fit 模型（用 mesh 實際位置）
+      try {
+        const box = new THREE.Box3();
+        manager.opaqueObject.traverse(o => {
+          if (o.isMesh && o.geometry && o.geometry.attributes && o.geometry.attributes.position) {
+            o.updateWorldMatrix(true, false);
+            box.expandByObject(o);
+          }
+        });
+        if (!box.isEmpty()) {
+          const size = box.getSize(new THREE.Vector3()).length() || 100;
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          modelCenter.copy(center);
+          modelSize = size;
+          manager.camera.position.set(center.x + size, center.y + 0.7 * size, center.z + size);
+          manager.camera.far = 2 * size;
+          manager.camera.zoom = 1.5 * window.innerWidth / size;
+          manager.camera.lookAt(center);
+          manager.camera.clearViewOffset(); // 清除 PLI 造成的視窗偏移（會把模型推出畫面）
+          manager.camera.updateProjectionMatrix();
+          manager.controls.target.copy(center);
+          manager.controls.update();
+        }
+        // 關閉 frustum culling，確保 mesh 不被剔除
+        manager.opaqueObject.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
+      } catch(e) { console.log('camera fit error:', e); }
+      manager.render();
+      document.getElementById('loading_overlay').classList.add('hidden');
+      setTimeout(() => document.getElementById('loading_overlay').style.display = 'none', 600);
+      updateProgress();
+    }
+  }
+  const loadedTimer = setInterval(checkLoaded, 500);
+
+  // ===== Camera View 視角切換 =====
+  let modelCenter = new THREE.Vector3();
+  let modelSize = 190;
+  let currentView = 'iso';
+
+  function applyView(view) {
+    if (!manager) return;
+    currentView = view;
+    const size = modelSize;
+    const c = modelCenter;
+    let pos;
+    switch(view) {
+      case 'front': pos = new THREE.Vector3(c.x, c.y, c.z + size); break;
+      case 'side':  pos = new THREE.Vector3(c.x + size, c.y, c.z); break;
+      case 'top':   pos = new THREE.Vector3(c.x, c.y + size, c.z); break;
+      default:      pos = new THREE.Vector3(c.x + size, c.y + 0.7 * size, c.z + size); break;
+    }
+    manager.camera.position.copy(pos);
+    manager.camera.zoom = 1.5 * window.innerWidth / size;
+    manager.camera.far = 2 * size;
+    manager.camera.lookAt(c);
+    manager.camera.clearViewOffset();
+    manager.camera.updateProjectionMatrix();
+    manager.controls.target.copy(c);
+    manager.controls.update();
+    manager.render();
+    // 更新按鈕狀態
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('view_' + view).classList.add('active');
+  }
+
+  ['iso', 'front', 'side', 'top'].forEach(v => {
+    document.getElementById('view_' + v).onclick = () => applyView(v);
+  });
+
+  // ===== 控制按鈕 =====
+  document.getElementById('btn_prev').onclick = () => { if (manager) { manager.prevStep(); updateProgress(); } };
+  document.getElementById('btn_next').onclick = () => { if (manager) { manager.nextStep(); updateProgress(); } };
+
+  // 自動播放
+  var playTimer = null;
+  var playBtn = document.getElementById('btn_play');
+  function togglePlay() {
+    if (playTimer) {
+      clearInterval(playTimer);
+      playTimer = null;
+      playBtn.textContent = '▶ 自動播放';
+      playBtn.classList.remove('playing');
+    } else {
+      playTimer = setInterval(() => {
+        if (!manager) return;
+        if (manager.currentStep >= manager.stepHandler.totalNumberOfSteps) {
+          clearInterval(playTimer);
+          playTimer = null;
+          playBtn.textContent = '▶ 自動播放';
+          playBtn.classList.remove('playing');
+          return;
+        }
+        manager.nextStep();
+        updateProgress();
+      }, 1800);
+      playBtn.textContent = '⏸ 暫停';
+      playBtn.classList.add('playing');
+    }
+  }
+  playBtn.onclick = togglePlay;
+
+  // 鍵盤控制
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') { document.getElementById('btn_next').click(); }
+    if (e.key === 'ArrowLeft') { document.getElementById('btn_prev').click(); }
+    if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  });
+
+  // 定期更新進度（manager 可能自行變動步驟）
+  setInterval(updateProgress, 800);
+
+  main();
+</script>
+</body>
+</html>
