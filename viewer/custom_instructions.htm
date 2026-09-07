@@ -346,11 +346,24 @@
       left: 8px !important;
       right: auto !important;
       bottom: 8px !important;
-      transform: scale(0.55);
+      transform: scale(1.1);
       transform-origin: bottom left;
       max-height: 46vh !important;
       border-radius: 10px !important;
       box-shadow: 0 6px 18px rgba(0,0,0,0.3) !important;
+      transition: transform 0.25s ease;
+    }
+    /* 點 PLI 放大檢視（再點一次縮回）*/
+    #pli.pli-expanded {
+      transform: translate(-50%, -50%) scale(2.4) !important;
+      transform-origin: center center !important;
+      top: 45% !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: auto !important;
+      z-index: 300 !important;
+      max-height: none !important;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.65) !important;
     }
     #pli canvas { border-radius: 6px; }
     #pli_drag_horizontal, #pli_drag_vertical { display: none !important; }
@@ -409,10 +422,22 @@
       left: 6px !important;
       right: auto !important;
       bottom: 6px !important;
-      transform: scale(0.42);
+      transform: scale(0.84);
       transform-origin: bottom left;
       max-height: 40vh !important;
       border-radius: 8px !important;
+      transition: transform 0.25s ease;
+    }
+    #pli.pli-expanded {
+      transform: translate(-50%, -50%) scale(2.2) !important;
+      transform-origin: center center !important;
+      top: 45% !important;
+      left: 50% !important;
+      right: auto !important;
+      bottom: auto !important;
+      z-index: 300 !important;
+      max-height: none !important;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.65) !important;
     }
     #pli_drag_horizontal, #pli_drag_vertical, #multiplier, #rotator { display: none !important; }
   }
@@ -817,6 +842,15 @@
     if (e.key === 'ArrowLeft') { document.getElementById('btn_prev').click(); }
     if (e.key === ' ') { e.preventDefault(); togglePlay(); }
   });
+
+  // PLI 點擊放大/縮回（手機 RWD 用；桌面保留 buildinginstructions 的零件預覽行為）
+  var pliToggleEl = document.getElementById('pli');
+  if (pliToggleEl && window.matchMedia('(max-width: 950px)').matches) {
+    pliToggleEl.addEventListener('click', function(e) {
+      e.stopPropagation();
+      this.classList.toggle('pli-expanded');
+    });
+  }
 
   // 定期更新進度（manager 可能自行變動步驟）
   setInterval(updateProgress, 800);
