@@ -39,6 +39,10 @@ async function main() {
     const { chromium } = require('playwright');
     const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const diag = [];
+    page.on('pageerror', e => diag.push('PAGEERROR: ' + String(e.message).slice(0, 400)));
+    page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') diag.push('[' + m.type() + '] ' + m.text().slice(0, 300)); });
+    page.on('requestfailed', r => diag.push('REQFAIL: ' + r.url().slice(0, 150) + ' -> ' + ((r.failure() && r.failure().errorText) || '')));
     await page.goto(`http://localhost:${PORT}/viewer/custom_instructions.htm?model=${encodeURIComponent(safeName)}`,
       { waitUntil: 'load', timeout: 90000 });
 
@@ -51,7 +55,22 @@ async function main() {
         manager.renderer.info && manager.renderer.info.render.triangles > 0);
       if (ready) break;
     }
-    if (!ready) throw new Error('模型載入逾時');
+    if (!ready) {
+      // dump 診斷：manager state + 頁面錯誤，供 Actions log 定位
+      let st = {};
+      try {
+        st = await page.evaluate(() => ({
+          hasManager: typeof manager !== 'undefined',
+          stepHandler: typeof manager !== 'undefined' && manager.stepHandler ? 'yes' : 'no',
+          tri: typeof manager !== 'undefined' && manager.renderer && manager.renderer.info ? manager.renderer.info.render.triangles : -1,
+          title: document.title,
+          modelEl: document.getElementById('model_title') ? document.getElementById('model_title').textContent : null
+        }));
+      } catch (e) { st = { evalErr: String(e) }; }
+      console.error('DIAG state=' + JSON.stringify(st));
+      console.error('DIAG events:\n' + diag.slice(0, 40).join('\n'));
+      throw new Error('模型載入逾時');
+    }
 
     // 跳最後一步（完整成品）
     await page.evaluate(() => {
