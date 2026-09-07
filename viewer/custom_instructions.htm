@@ -762,13 +762,16 @@
           try {
             const step = manager.stepHandler.getCurrentStep();
             // RWD：手機/小平板用較小尺寸繪製 PLI（否則 360px 寬繪製再 scale 會爆螢幕）
+            // PackPlis 會在傳入區域內自動最大化每個零件圖：零件少→圖大、多→縮小排列
             let pw, ph;
             if (window.innerWidth <= 950) {
-              if (window.innerHeight > window.innerWidth) { pw = 170; ph = 260; }  // 直放
-              else { pw = 110; ph = 170; }  // 橫放
+              if (window.innerHeight > window.innerWidth) {
+                pw = Math.min(230, Math.round(window.innerWidth * 0.58)); // 直放：寬隨螢幕，給 PackPlis 較大空間
+                ph = Math.round(window.innerHeight * 0.4);
+              } else { pw = 130; ph = 200; }  // 橫放
             } else {
-              pw = manager.pliW || 360;
-              ph = manager.pliH || 500;
+              pw = 400;  // 桌面給足空間（PackPlis 依內容收斂實際寬度）
+              ph = 620;
             }
             manager.pliBuilder.drawPLIForStep(true, step, pw, ph, true);
           } catch(err) {}
