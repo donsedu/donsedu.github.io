@@ -1,0 +1,18 @@
+{
+  "name": "donsedu.github.io",
+  "version": "1.0.0",
+  "description": "## 專案概述 這是 AI創意無限營的官方網站專案，目前正在進行改版升級。在改版期間，我們提供了一個臨時的「網站施工中」頁面，讓訪客可以透過社群媒體與我們聯繫。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.63.0"
+  }
+}
