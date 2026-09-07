@@ -271,6 +271,151 @@
     color: #a8c0f0;
     letter-spacing: 2px;
   }
+
+  /* ===== RWD：手機直放 ===== */
+  @media (max-width: 600px) {
+    .main-area {
+      display: flex;
+      flex-direction: column;
+    }
+    #main_canvas_holder {
+      position: relative !important;
+      inset: auto !important;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .app-header {
+      padding: 8px 12px;
+      gap: 10px;
+    }
+    .logo-badge { width: 32px; height: 32px; border-radius: 9px; font-size: 16px; }
+    .title-group h1 { font-size: 15px; }
+    .title-group .sub { display: none; }
+    .stats { gap: 5px; font-size: 11px; }
+    .stat-pill { padding: 3px 9px; }
+
+    /* 控制面板：右側浮層 → 底部 dock（body flex column 第三列，不蓋 3D） */
+    .control-panel {
+      position: static;
+      transform: none;
+      width: 100%;
+      right: auto;
+      top: auto;
+      border-radius: 0;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      border-top: 1px solid rgba(120, 160, 255, 0.2);
+      background: rgba(13, 19, 38, 0.97);
+      box-shadow: none;
+      z-index: 60;
+      order: 3;
+    }
+    .step-indicator {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin: 0;
+    }
+    .step-indicator .step-num { font-size: 26px; }
+    .step-indicator .step-total { font-size: 12px; }
+    .progress-track { flex: 1; min-width: 50px; margin: 0; }
+    .btn-row { flex: 0 1 auto; margin: 0; gap: 8px; }
+    .nav-btn { padding: 14px 18px; font-size: 17px; }
+    .btn-play {
+      width: auto;
+      margin: 0;
+      padding: 14px 16px;
+      font-size: 16px;
+    }
+    .view-row {
+      width: 100%;
+      margin: 2px 0 0;
+      gap: 5px;
+    }
+    .view-btn { padding: 9px 0; font-size: 13px; }
+    .hint { display: none; }
+
+    /* PLI 常駐縮小：貼 3D 區左下（dock 上方），不蓋中央模型 */
+    #pli {
+      position: absolute !important;
+      top: auto !important;
+      left: 8px !important;
+      right: auto !important;
+      bottom: 8px !important;
+      transform: scale(0.55);
+      transform-origin: bottom left;
+      max-height: 46vh !important;
+      border-radius: 10px !important;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.3) !important;
+    }
+    #pli canvas { border-radius: 6px; }
+    #pli_drag_horizontal, #pli_drag_vertical { display: none !important; }
+    #multiplier, #rotator { display: none !important; }
+  }
+
+  /* ===== RWD：手機橫放 / 低高度螢幕 ===== */
+  @media (max-width: 950px) and (max-height: 520px) {
+    .main-area {
+      display: flex;
+      flex-direction: column;
+    }
+    #main_canvas_holder {
+      position: relative !important;
+      inset: auto !important;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .app-header { padding: 6px 10px; gap: 8px; }
+    .logo-badge { width: 26px; height: 26px; border-radius: 7px; font-size: 14px; }
+    .title-group h1 { font-size: 13px; }
+    .title-group .sub { display: none; }
+    .stats { font-size: 10px; gap: 4px; }
+    .stat-pill { padding: 2px 7px; }
+
+    /* dock 改側邊窄條（右側），3D 保最大 */
+    .control-panel {
+      position: static;
+      order: 3;
+      transform: none;
+      width: 100%;
+      border-radius: 0;
+      padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      border-top: 1px solid rgba(120, 160, 255, 0.2);
+      background: rgba(13, 19, 38, 0.97);
+      z-index: 60;
+    }
+    .step-indicator { margin: 0; display: flex; align-items: baseline; gap: 3px; }
+    .step-indicator .step-num { font-size: 20px; }
+    .step-indicator .step-total { font-size: 10px; }
+    .progress-track { flex: 1; margin: 0; min-width: 40px; }
+    .btn-row { margin: 0; flex: 0 0 auto; }
+    .nav-btn { padding: 10px 12px; font-size: 15px; }
+    .view-row { display: none; }         /* 橫放隱藏視角切換（可拖曳旋轉）*/
+    .btn-play { width: auto; margin: 0; padding: 10px 12px; font-size: 14px; }
+    .hint { display: none; }
+
+    #pli {
+      position: absolute !important;
+      top: auto !important;
+      left: 6px !important;
+      right: auto !important;
+      bottom: 6px !important;
+      transform: scale(0.42);
+      transform-origin: bottom left;
+      max-height: 40vh !important;
+      border-radius: 8px !important;
+    }
+    #pli_drag_horizontal, #pli_drag_vertical, #multiplier, #rotator { display: none !important; }
+  }
 </style>
 
 <!-- Google Fonts -->
@@ -495,6 +640,13 @@
       manager.onWindowResize = function(force) {
         origResize(force);
         manager.composer = null;
+        // RWD：canvas 顯示尺寸（holder）可能 ≠ window——renderer buffer 對齊 holder，
+        // 避免手機直放縱向壓縮（buffer=window 844 vs 顯示 606）
+        try {
+          const cw = manager.canvas ? manager.canvas.clientWidth : 0;
+          const ch = manager.canvas ? manager.canvas.clientHeight : 0;
+          if (cw > 0 && ch > 0) manager.renderer.setSize(cw, ch, true);
+        } catch (e) {}
         fitCamera();
       };
       // 包裝 updateUIComponents：它會用步驟定義的背景色覆蓋，固定為灰色
@@ -555,6 +707,8 @@
         fitCamera();
         manager.render();
       };
+      // 所有包裝就緒後對齊一次 renderer buffer（RWD：手機 holder ≠ window，首次渲染就要對）
+      try { manager.onWindowResize(true); } catch(e) {}
       // 強制相機 fit 模型（用 mesh 實際位置）
       try {
         const box = new THREE.Box3();
