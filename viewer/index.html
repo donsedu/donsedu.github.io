@@ -13,8 +13,22 @@
     min-height: 100vh;
   }
   .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
-  h1 { font-size: 22px; font-weight: 900; margin-bottom: 8px; letter-spacing: 1px; }
-  .sub { color: #8b8f98; font-size: 13px; margin-bottom: 32px; }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  h1 { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
+  .sub { color: #8b8f98; font-size: 13px; margin-bottom: 28px; }
+  .upload-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #e8722a; color: #fff; text-decoration: none;
+    font-size: 14px; font-weight: 800; padding: 8px 18px; border-radius: 999px;
+    transition: 0.2s; border: none; cursor: pointer;
+  }
+  .upload-btn:hover { background: #d4621f; }
+  .banner {
+    border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; display: none;
+  }
+  .banner.ok { background: #1d3524; border: 1px solid #2d5a3a; color: #8fd6a4; display: block; }
+  .banner.dup { background: #3a2b1d; border: 1px solid #5a4a2d; color: #e0c68f; display: block; }
+  .banner.err { background: #3a1d1d; border: 1px solid #5a2d2d; color: #e0a08f; display: block; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
   .card {
     background: #1e2126; border-radius: 14px; overflow: hidden;
@@ -31,11 +45,15 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>🧱 LEGO 組裝圖</h1>
+  <div class="top">
+    <h1>🧱 LEGO 組裝圖</h1>
+    <a class="upload-btn" href="https://github.com/donsedu/donsedu.github.io/upload/main/uploads" target="_blank">＋ 上傳組裝圖</a>
+  </div>
   <div class="sub">最近上傳的組裝圖（點開可 3D 旋轉、逐步組裝）</div>
+  <div id="banner" class="banner"></div>
   <div class="grid">
-    <a class="card" href="custom_instructions.htm?model=crossbow_v2">
-      <img class="thumb" src="thumbnails/crossbow_v2.png" alt="SPM-9686 十字弓 V2">
+    <a class="card" href="custom_instructions.htm?model=crossbow_v2_fixed">
+      <img class="thumb" src="thumbnails/crossbow_v2_fixed.png" alt="SPM-9686 十字弓 V2">
       <div class="card-body">
         <div class="card-name">SPM-9686 十字弓 V2</div>
         <div class="card-meta"><span class="pill">🧱 21 步驟</span><span class="pill">📋 互動 3D</span></div>
@@ -43,5 +61,20 @@
     </a>
   </div>
 </div>
+<script>
+fetch('upload-result.json', { cache: 'no-store' }).then(r => r.json()).then(d => {
+  const b = document.getElementById('banner');
+  if (d.status === 'ok') {
+    b.className = 'banner ok';
+    b.textContent = '✅ 「' + d.name + '」已上線！重整後的卡片就是它。';
+  } else if (d.status === 'duplicate') {
+    b.className = 'banner dup';
+    b.textContent = '⚠️ 剛剛上傳的「' + d.name + '」與已存在的「' + d.existing + '」相同——未重複加入。';
+  } else if (d.status === 'conversion_failed' || d.status === 'parts_missing' || d.status === 'thumb_failed') {
+    b.className = 'banner err';
+    b.textContent = '❌ 上傳處理失敗：' + (d.message || '不明原因');
+  }
+}).catch(() => {});
+</script>
 </body>
 </html>

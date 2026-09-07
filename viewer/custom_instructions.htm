@@ -411,13 +411,20 @@
   var model = 'models/corvette_full.mpd';
   var modelName = 'Corvette 跑車';
   var params = new URLSearchParams(location.search);
-  if (params.get('model') === 'crossbow') {
+  var pModel = params.get('model');
+  if (pModel === 'crossbow') {
     model = 'models/crossbow.ldr';
     modelName = 'SPM-9686 十字弓';
-  }
-  if (params.get('model') === 'crossbow_v2') {
+  } else if (pModel === 'crossbow_v2') {
     model = 'models/crossbow_v2_fixed.ldr';
     modelName = 'SPM-9686 十字弓 V2（21 步驟）';
+  } else if (pModel) {
+    // 通用 fallback：?model=<name> 直接對應 models/<name>.ldr（上傳流程自動使用）
+    model = 'models/' + pModel + '.ldr';
+    modelName = pModel;
+  } else {
+    model = 'models/crossbow_v2_fixed.ldr';
+    modelName = 'SPM-9686 十字弓 V2';
   }
 
   document.getElementById('model_title').textContent = modelName;

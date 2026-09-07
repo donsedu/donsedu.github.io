@@ -1,0 +1,112 @@
+name: LEGO Upload Processor
+on:
+  push:
+    paths:
+      - 'uploads/**'
+      - '.github/workflows/lego-upload.yml'
+      - 'repo-scripts/lego-upload/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lego-upload
+  cancel-in-progress: false
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache LDraw parts
+        uses: actions/cache@v4
+        id: ldraw-cache
+        with:
+          path: .parts_cache
+          key: ldraw-parts-v1
+
+      - name: Download & flatten LDraw parts library
+        if: steps.ldraw-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -sL "https://library.ldraw.org/library/updates/complete.zip" -o /tmp/ldraw.zip
+          unzip -qo /tmp/ldraw.zip -d /tmp/ldraw_full
+          mkdir -p .parts_cache
+          # 展平成與本機 ldraw_parts 相同的結構：根=parts+primitives，8/48/s/textures 為子目錄
+          cp -r /tmp/ldraw_full/ldraw/parts/. .parts_cache/
+          cp -r /tmp/ldraw_full/ldraw/p/. .parts_cache/
+          rm -rf /tmp/ldraw_full /tmp/ldraw.zip
+          echo "零件數: $(find .parts_cache -type f | wc -l)"
+
+      - name: Setup Node + Playwright
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-chromium-v1
+      - name: Install Playwright
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm i playwright@latest >/dev/null 2>&1
+          npx playwright install --with-deps chromium 2>&1 | tail -2
+
+      - name: Find uploaded .io files
+        id: find-io
+        run: |
+          # push 觸發：列出本次 push 的 uploads/*.io
+          if [ "${{ github.event_name }}" = "push" ]; then
+            git diff --name-only HEAD~1 HEAD -- uploads/ | grep -i '\.io$' > /tmp/new_ios.txt || true
+          else
+            ls uploads/*.io 2>/dev/null > /tmp/new_ios.txt || true
+          fi
+          echo "待處理 $(wc -l < /tmp/new_ios.txt 2>/dev/null || echo 0) 個 .io"
+
+      - name: Process uploads
+        env:
+          LEGO_PARTS_SRC: ${{ github.workspace }}/.parts_cache
+          NODE_PATH: ${{ github.workspace }}/node_modules
+        run: |
+          FAILED=0
+          while IFS= read -r io; do
+            [ -z "$io" ] && continue
+            echo "=== 處理 $io ==="
+            python3 repo-scripts/lego-upload/process.py "$io" "$PWD"
+            code=$?
+            # 0=成功 3=重複（正常拒絕） 其他=失敗
+            if [ $code -ne 0 ] && [ $code -ne 3 ]; then
+              echo "❌ $io 處理失敗 (exit $code)"
+              FAILED=1
+            fi
+          done < /tmp/new_ios.txt
+          exit $FAILED
+
+      - name: Clean processed .io
+        run: |
+          rm -f uploads/*.io
+          # 保留 uploads/.gitkeep
+          touch uploads/.gitkeep
+
+      - name: Commit & push result
+        run: |
+          git config user.name "LEGO Auto Bot"
+          git config user.email "lego-bot@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "無變更"
+          else
+            git commit -m "🤖 上傳處理完成（縮圖/首頁/零件庫）" 
+            git push
+            echo "已 push"
+          fi
