@@ -1,5 +1,9 @@
 {
- "status": "thumb_failed",
- "message": "縮圖產生失敗: thumb failed",
- "at": "2026-09-07T17:02:18.416899+00:00"
+ "status": "ok",
+ "name": "ESM-9656-火車-車廂",
+ "file": "esm-9656-火車-車廂.ldr",
+ "url": "custom_instructions.htm?model=esm-9656-火車-車廂",
+ "steps": 6,
+ "parts": 21,
+ "at": "2026-09-07T17:03:54.130859+00:00"
 }

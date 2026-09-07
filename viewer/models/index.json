@@ -1,5 +1,13 @@
 [
  {
+  "file": "esm-9656-火車-車廂.ldr",
+  "name": "ESM-9656-火車-車廂",
+  "steps": 6,
+  "parts": 21,
+  "fingerprint": "74c94f7cad23c99a5fa784a6",
+  "added_at": "2026-09-07T17:03:54.130537+00:00"
+ },
+ {
   "file": "crossbow_v2_fixed.ldr",
   "name": "SPM-9686 十字弓 V2",
   "steps": 21,
