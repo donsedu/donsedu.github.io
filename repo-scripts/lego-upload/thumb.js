@@ -39,7 +39,7 @@ async function main() {
     const { chromium } = require('playwright');
     const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    await page.goto(`http://localhost:${PORT}/viewer/custom_instructions.htm?model=${safeName}`,
+    await page.goto(`http://localhost:${PORT}/viewer/custom_instructions.htm?model=${encodeURIComponent(safeName)}`,
       { waitUntil: 'load', timeout: 90000 });
 
     // 等 manager + 渲染
