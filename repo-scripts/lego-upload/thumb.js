@@ -43,6 +43,7 @@ async function main() {
     page.on('pageerror', e => diag.push('PAGEERROR: ' + String(e.message).slice(0, 400)));
     page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') diag.push('[' + m.type() + '] ' + m.text().slice(0, 300)); });
     page.on('requestfailed', r => diag.push('REQFAIL: ' + r.url().slice(0, 150) + ' -> ' + ((r.failure() && r.failure().errorText) || '')));
+    page.on('response', r => { if (r.status() >= 400) diag.push('HTTP' + r.status() + ': ' + r.url().slice(0, 200)); });
     await page.goto(`http://localhost:${PORT}/viewer/custom_instructions.htm?model=${encodeURIComponent(safeName)}`,
       { waitUntil: 'load', timeout: 90000 });
 
@@ -66,6 +67,19 @@ async function main() {
           title: document.title,
           modelEl: document.getElementById('model_title') ? document.getElementById('model_title').textContent : null
         }));
+        // loader 內部狀態：mainModel vs partTypes key（null.steps 根因比對）
+        const ld = await page.evaluate(() => {
+          if (typeof manager === 'undefined' || !manager.ldrLoader) return { err: 'no loader' };
+          const ldr = manager.ldrLoader;
+          const keys = Object.keys(ldr.partTypes || {});
+          return {
+            mainModel: ldr.mainModel,
+            modelKeys: keys.filter(k => k.includes('火車') || k.includes('ESM') || k.includes('esm')),
+            keyCount: keys.length,
+            mainHas: (ldr.mainModel && ldr.partTypes) ? ldr.partTypes.hasOwnProperty(ldr.mainModel) : null
+          };
+        });
+        st.loader = ld;
       } catch (e) { st = { evalErr: String(e) }; }
       console.error('DIAG state=' + JSON.stringify(st));
       console.error('DIAG events:\n' + diag.slice(0, 40).join('\n'));
