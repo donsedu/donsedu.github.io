@@ -271,8 +271,8 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
         this.clickMap.forEach(drawMultiplier);
     }
     // Draw Annotation:（零件長度文字）
-    // 字體大小與數量標籤(2x)相同；外框/圓形底以文字實際寬度 + padding 自動調整，
-    // 不同位數（1、6、5.5）都會剛好包住數字。
+    // 字體大小與數量標籤(2x)相同；外框/圓形底以文字實際寬度 + padding 自動調整。
+    // padding = 字高 0.2 倍；超出 PLI 邊緣時自動翻到零件另一側並收進邊界，避免被切。
     context.font = parseInt(textHeight*0.55*DPR) + "px sans-serif";
     this.clickMap.filter(icon => icon.annotation).forEach(icon => {
 	let x = (icon.x+icon.FULL_DX+1)*DPR;
@@ -281,21 +281,34 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
 	const txt = icon.annotation;
 	const fontPx = parseInt(textHeight*0.55*DPR);
 	const tw = context.measureText(txt).width;      // 文字實際寬度
-	const padX = fontPx*0.6;                         // 左右 padding
-	const padY = fontPx*0.35;                         // 上下 padding
-	const baseY = y + h*0.79;                         // 文字 baseline（維持原垂直位置）
+	const padX = fontPx*0.2;                         // 左右 padding（字高 0.2）
+	const padY = fontPx*0.2;                         // 上下 padding（字高 0.2）
+	const cw = context.canvas.width;
+	const ch = context.canvas.height;
+	const margin = 2;
+	// 水平位置：預設零件右側；寬度超出畫布右緣 → 翻到零件左側；仍超出就收到邊界內
+	const wNeed = tw + padX*2;
+	if (x + wNeed + margin > cw) {
+	    x = icon.x*DPR - wNeed - margin;
+	    if (x < margin) x = margin;
+	}
+	// 垂直位置（baseline）：頂/底超出畫布時收進邊界
+	let baseY = y + h*0.79;
+	if (baseY - fontPx - padY < margin) baseY = fontPx + padY + margin;
+	if (baseY + margin > ch) baseY = ch - margin;
 	context.beginPath();
 	context.fillStyle = "#CFF";
 	if(icon.desc && icon.desc.startsWith('Technic Axle')) {
-	    // 圓形底：以文字中心為圓心，半徑 = max(文字寬, 字高)/2 + padding
-	    const cx = x + tw/2;
-	    const cy = baseY - fontPx*0.45;
+	    // 圓形底：以文字中心為圓心，半徑 = max(文字寬, 字高)/2 + padding；圓心收進畫布
 	    const rad = Math.max(tw, fontPx)/2 + padX;
+	    let cx = x + tw/2;
+	    cx = Math.min(Math.max(cx, rad + margin), cw - rad - margin);
+	    const cy = baseY - fontPx*0.45;
 	    context.arc(cx, cy, rad, 0, 2*Math.PI, false);
         }
 	else {
 	    // 方框底：文字寬 + 左右 padding、字高 + 上下 padding
-	    context.rect(x - padX, baseY - fontPx - padY, tw + padX*2, fontPx + padY*2);
+	    context.rect(x - padX, baseY - fontPx - padY, wNeed, fontPx + padY*2);
         }
 	context.fill();
 	context.stroke();
