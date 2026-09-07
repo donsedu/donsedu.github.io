@@ -220,6 +220,50 @@
     color: #ff9090;
     border-color: rgba(220, 80, 80, 0.4);
   }
+  /* 相機縮放條 */
+  .zoom-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+  .zoom-label { font-size: 16px; line-height: 1; }
+  .zoom-val {
+    font-size: 12px;
+    color: #a8c0f0;
+    width: 34px;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="range"]#zoom_slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 110px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(120, 160, 255, 0.25);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]#zoom_slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f6ad55, #dd6b20);
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+  }
+  input[type="range"]#zoom_slider::-moz-range-thumb {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f6ad55, #dd6b20);
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+  }
   .hint {
     display: none;
   }
@@ -237,6 +281,21 @@
     border: 1px solid rgba(0, 0, 0, 0.12) !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
     padding: 6px !important;
+    transition: transform 0.25s ease, left 0.25s ease, top 0.25s ease;
+    cursor: zoom-in;
+  }
+  /* 點 PLI 放大檢視（全域：桌面＋手機；再點縮回）*/
+  #pli.pli-expanded {
+    transform: translate(-50%, -50%) scale(2.2) !important;
+    transform-origin: center center !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    z-index: 300 !important;
+    max-height: none !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.65) !important;
+    cursor: zoom-out;
   }
   #pli canvas {
     background: #ffffff !important;
@@ -536,6 +595,11 @@
       <button class="view-btn" id="view_top" title="頂視圖">▤ 頂視</button>
     </div>
     <button class="btn-play" id="btn_play">▶ 自動播放</button>
+    <div class="zoom-ctrl" title="相機距離（拉動後作為後續步驟的預設距離）">
+      <span class="zoom-label">🔍</span>
+      <input type="range" id="zoom_slider" min="30" max="150" value="80" step="1" aria-label="相機縮放">
+      <span class="zoom-val" id="zoom_val">80%</span>
+    </div>
     <div class="hint">🖱️ 拖曳旋轉模型<br>🔍 滾輪縮放視角</div>
   </div>
 
@@ -730,7 +794,7 @@
           modelSize = size;
           manager.camera.position.set(center.x + size, center.y + 0.7 * size, center.z + size);
           manager.camera.far = 2 * size;
-          manager.camera.zoom = 1.5 * window.innerWidth / size;
+          manager.camera.zoom = (1.5 * window.innerWidth / size) * zoomFactor;
           manager.camera.lookAt(center);
           manager.camera.clearViewOffset(); // 清除 PLI 造成的視窗偏移（會把模型推出畫面）
           manager.camera.updateProjectionMatrix();
@@ -764,7 +828,7 @@
           modelSize = size;
           manager.camera.position.set(center.x + size, center.y + 0.7 * size, center.z + size);
           manager.camera.far = 2 * size;
-          manager.camera.zoom = 1.5 * window.innerWidth / size;
+          manager.camera.zoom = (1.5 * window.innerWidth / size) * zoomFactor;
           manager.camera.lookAt(center);
           manager.camera.clearViewOffset(); // 清除 PLI 造成的視窗偏移（會把模型推出畫面）
           manager.camera.updateProjectionMatrix();
@@ -786,6 +850,9 @@
   let modelCenter = new THREE.Vector3();
   let modelSize = 190;
   let currentView = 'iso';
+  // 相機距離倍率（縮放條控制；<1 拉遠、>1 拉近）。fitCamera/applyView 共用 →
+  // 拉動後自動成為後續步驟與視角切換的預設距離。預設 0.8 = 比原本貼近視角拉遠 20%。
+  let zoomFactor = 0.8;
 
   function applyView(view) {
     if (!manager) return;
@@ -800,7 +867,7 @@
       default:      pos = new THREE.Vector3(c.x + size, c.y + 0.7 * size, c.z + size); break;
     }
     manager.camera.position.copy(pos);
-    manager.camera.zoom = 1.5 * window.innerWidth / size;
+    manager.camera.zoom = (1.5 * window.innerWidth / size) * zoomFactor;
     manager.camera.far = 2 * size;
     manager.camera.lookAt(c);
     manager.camera.clearViewOffset();
@@ -856,12 +923,26 @@
     if (e.key === ' ') { e.preventDefault(); togglePlay(); }
   });
 
-  // PLI 點擊放大/縮回（手機 RWD 用；桌面保留 buildinginstructions 的零件預覽行為）
+  // PLI 點擊放大/縮回（全域：桌面＋手機；桌面原本的單零件預覽由整體放大取代）
   var pliToggleEl = document.getElementById('pli');
-  if (pliToggleEl && window.matchMedia('(max-width: 950px)').matches) {
+  if (pliToggleEl) {
     pliToggleEl.addEventListener('click', function(e) {
       e.stopPropagation();
       this.classList.toggle('pli-expanded');
+    });
+  }
+
+  // 相機縮放條：拉動 → 更新 zoomFactor → 以目前視角立即套用（成為後續步驟預設距離）
+  var zoomSlider = document.getElementById('zoom_slider');
+  var zoomVal = document.getElementById('zoom_val');
+  if (zoomSlider) {
+    zoomSlider.value = Math.round(zoomFactor * 100);
+    zoomSlider.addEventListener('input', function() {
+      zoomFactor = this.value / 100;
+      if (zoomVal) zoomVal.textContent = this.value + '%';
+      if (manager && manager.stepHandler) {
+        applyView(currentView); // 用新距離重設視角（zoomFactor 全域 → 步驟切換也沿用）
+      }
     });
   }
 
