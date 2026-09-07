@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>LEGO 組裝圖</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans TC', 'PingFang TC', sans-serif;
+    background: #14161a; color: #e8e6e1;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+  h1 { font-size: 22px; font-weight: 900; margin-bottom: 8px; letter-spacing: 1px; }
+  .sub { color: #8b8f98; font-size: 13px; margin-bottom: 32px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+  .card {
+    background: #1e2126; border-radius: 14px; overflow: hidden;
+    border: 1px solid #2a2e35; transition: 0.2s; text-decoration: none; color: inherit;
+    display: block;
+  }
+  .card:hover { transform: translateY(-3px); border-color: #e8722a; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #b0b4bc; display: block; }
+  .card-body { padding: 14px 16px; }
+  .card-name { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+  .card-meta { font-size: 12px; color: #8b8f98; }
+  .card-meta .pill { background: #2a2e35; padding: 2px 10px; border-radius: 999px; margin-right: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧱 LEGO 組裝圖</h1>
+  <div class="sub">最近上傳的組裝圖（點開可 3D 旋轉、逐步組裝）</div>
+  <div class="grid">
+    <a class="card" href="custom_instructions.htm?model=crossbow_v2">
+      <img class="thumb" src="thumbnails/crossbow_v2.png" alt="SPM-9686 十字弓 V2">
+      <div class="card-body">
+        <div class="card-name">SPM-9686 十字弓 V2</div>
+        <div class="card-meta"><span class="pill">🧱 21 步驟</span><span class="pill">📋 互動 3D</span></div>
+      </div>
+    </a>
+  </div>
+</div>
+</body>
+</html>
