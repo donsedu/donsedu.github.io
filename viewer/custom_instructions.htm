@@ -272,10 +272,10 @@
   /* ===== PLI 零件清單（左下角，白底）===== */
   #pli {
     position: absolute !important;
-    top: auto !important;
-    left: 24px !important;
-    right: auto !important;
-    bottom: 16px !important;
+    top: auto;
+    left: 24px;
+    right: auto;
+    bottom: 16px;
     z-index: 60 !important;
     background: #ffffff !important;
     border-radius: 12px !important;
@@ -288,9 +288,9 @@
   /* 點 PLI 放大檢視（全域：桌面＋手機；再點縮回）。transform 不用 !important → JS fit scale 可覆蓋 */
   #pli.pli-expanded {
     transform: translate(-50%, -50%) scale(2.2);
-    transform-origin: center center !important;
-    top: 50% !important;
-    left: 50% !important;
+    transform-origin: center center;
+    top: 50%;
+    left: 50%;
     right: auto !important;
     bottom: auto !important;
     z-index: 300 !important;
@@ -408,10 +408,10 @@
     /* PLI 常駐：手機以較小尺寸重繪（見 updatePLI），此處不 scale 避免爆螢幕 */
     #pli {
       position: absolute !important;
-      top: auto !important;
-      left: 8px !important;
-      right: auto !important;
-      bottom: 8px !important;
+      top: auto;
+      left: 8px;
+      right: auto;
+      bottom: 8px;
       transform: scale(1);
       transform-origin: bottom left;
       max-height: 46vh !important;
@@ -422,9 +422,9 @@
     /* 點 PLI 放大檢視（再點一次縮回）*/
     #pli.pli-expanded {
       transform: translate(-50%, -50%) scale(2.4);
-      transform-origin: center center !important;
-      top: 45% !important;
-      left: 50% !important;
+      transform-origin: center center;
+      top: 45%;
+      left: 50%;
       right: auto !important;
       bottom: auto !important;
       z-index: 300 !important;
@@ -455,7 +455,7 @@
     .stats { font-size: 10px; gap: 4px; }
     .stat-pill { padding: 2px 7px; }
 
-    /* dock 改側邊窄條（右側），3D 保最大 */
+    /* dock 置底：第一行控制、第二行視角切換 */
     .control-panel {
       position: static;
       order: 3;
@@ -464,30 +464,33 @@
       border-radius: 0;
       padding: 6px 10px calc(6px + env(safe-area-inset-bottom, 0px));
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 4px 8px;
       border: none;
       border-top: 1px solid rgba(120, 160, 255, 0.2);
       background: rgba(13, 19, 38, 0.97);
       z-index: 60;
     }
-    .step-indicator { margin: 0; display: flex; align-items: baseline; gap: 3px; }
+    .step-indicator { margin: 0; display: flex; align-items: baseline; gap: 3px; order: 0; }
     .step-indicator .step-num { font-size: 20px; }
     .step-indicator .step-total { font-size: 10px; }
-    .progress-track { flex: 1; margin: 0; min-width: 40px; }
-    .btn-row { margin: 0; flex: 0 0 auto; }
+    .progress-track { flex: 1; margin: 0; min-width: 40px; order: 1; }
+    .btn-row { margin: 0; flex: 0 0 auto; order: 2; }
     .nav-btn { padding: 10px 12px; font-size: 15px; }
-    .view-row { display: none; }         /* 橫放隱藏視角切換（可拖曳旋轉）*/
-    .btn-play { width: auto; margin: 0; padding: 10px 12px; font-size: 14px; }
+    .btn-play { width: auto; margin: 0; padding: 10px 12px; font-size: 14px; order: 3; }
+    .zoom-ctrl { order: 4; margin-left: auto; }
+    .view-row { display: flex; order: 5; width: 100%; justify-content: center; gap: 6px; }
+    .view-btn { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
     .hint { display: none; }
 
     #pli {
       position: absolute !important;
-      top: auto !important;
-      left: 6px !important;
-      right: auto !important;
-      bottom: 6px !important;
+      top: auto;
+      left: 6px;
+      right: auto;
+      bottom: 6px;
       transform: scale(1);
       transform-origin: bottom left;
       max-height: 40vh !important;
@@ -496,9 +499,9 @@
     }
     #pli.pli-expanded {
       transform: translate(-50%, -50%) scale(2.2);
-      transform-origin: center center !important;
-      top: 45% !important;
-      left: 50% !important;
+      transform-origin: center center;
+      top: 45%;
+      left: 50%;
       right: auto !important;
       bottom: auto !important;
       z-index: 300 !important;
@@ -927,25 +930,43 @@
     if (e.key === ' ') { e.preventDefault(); togglePlay(); }
   });
 
-  // PLI 點擊放大/縮回（全域：桌面＋手機；放大 = Fit 畫面，依卡尺寸自動算 scale）
+  // PLI 點擊放大/縮回（全域：桌面＋手機）
+  // 放大時以「header 之下、dock 之上的可用空間」定位置中 → 不會被標題列遮蓋
   var pliToggleEl = document.getElementById('pli');
   if (pliToggleEl) {
     pliToggleEl.addEventListener('click', function(e) {
       e.stopPropagation();
       if (this.classList.contains('pli-expanded')) {
         this.classList.remove('pli-expanded');
-        this.style.transform = ''; // 回 CSS 預設位置/尺寸
+        this.style.transition = '';
+        this.style.transform = '';
+        this.style.top = '';
+        this.style.left = '';
+        this.style.bottom = '';
+        this.style.right = '';
+        this.style.transformOrigin = '';
       } else {
-        // 依 PLI 實際尺寸算 fit scale：寬高各留邊距，整卡放進畫面
         var w = this.offsetWidth || 200;
         var h = this.offsetHeight || 200;
-        var fitScale = Math.min(
-          (window.innerWidth * 0.92) / w,
-          (window.innerHeight * 0.85) / h
-        );
-        if (fitScale < 1.05) fitScale = 1.05; // 至少微放大，避免點擊無感
+        var headerEl = document.querySelector('.app-header');
+        var dockEl = document.querySelector('.control-panel');
+        var headerH = headerEl ? headerEl.offsetHeight : 0;
+        var dockH = dockEl ? dockEl.offsetHeight : 0;
+        var availW = window.innerWidth - 20;
+        var availH = Math.max(150, window.innerHeight - headerH - dockH - 16);
+        var scale = Math.min(availW / w, availH / h);
+        if (scale < 1.05) scale = 1.05; // 至少微放大，避免點擊無感
+        if (scale > 3.2) scale = 3.2;   // 上限，避免小卡爆大
+        this.style.transition = 'none'; // 關動畫避免錯位
         this.classList.add('pli-expanded');
-        this.style.transform = 'translate(-50%, -50%) scale(' + fitScale.toFixed(3) + ')';
+        this.style.transformOrigin = '0 0';
+        this.style.transform = 'scale(' + scale.toFixed(3) + ')';
+        // #pli 是 absolute，containing block = 3D holder（視窗 y=header 高度）
+        // → top 只需「可用區內置中」的偏移，視覺上自然從 header 下方開始
+        this.style.left = Math.max(10, Math.round((window.innerWidth - w) / 2)) + 'px';
+        this.style.top = Math.max(0, Math.round((availH - h * scale) / 2)) + 'px';
+        this.style.bottom = 'auto';
+        this.style.right = 'auto';
       }
     });
   }
