@@ -214,19 +214,19 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
     const baseFont = maxWidth >= 260 ? 20 : 18;
     let [W,H] = Algorithm.PackPlis(fillHeight, maxWidth-4, maxHeight-8, this.clickMap, textHeight);
     const DPR = window.devicePixelRatio;
-    // 自動撐開：PackPlis 後每個 icon 位置已定，測量 annotation（長度數字）實際右緣，
-    // 需要多少右側空間才撐開 canvas——無固定預留百分比，沒有標註的步驟完全不變寬。
+    // 自動撐開：PackPlis 後每個 icon 位置已定，估算 annotation（長度數字）實際右緣，
+    // 需要多少右側空間才撐開 canvas。字元寬用固定 0.62*fontPx（跨瀏覽器一致，
+    // Safari/Chrome measureText 差異會造成卡寬不同 → 右側空白不一致）。
     let needW = maxWidth;
     if(fillHeight) {
         const g2d = this.canvas.getContext('2d');
         if(g2d) {
             const fontPx = baseFont*DPR;
-            g2d.font = parseInt(fontPx) + "px sans-serif";
             const padX = fontPx*0.2;
             const margin = 2;
             this.clickMap.forEach(icon => {
                 if(!icon.annotation) return;
-                const tw = g2d.measureText(icon.annotation).width;
+                const tw = icon.annotation.length * fontPx * 0.62;
                 const right = (icon.x + icon.FULL_DX + 1)*DPR + tw + padX*2 + margin;
                 needW = Math.max(needW, right/DPR);
             });

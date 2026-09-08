@@ -385,24 +385,30 @@
       align-items: baseline;
       gap: 4px;
       margin: 0;
+      order: 0;
     }
     .step-indicator .step-num { font-size: 26px; }
     .step-indicator .step-total { font-size: 12px; }
-    .progress-track { flex: 1; min-width: 50px; margin: 0; }
-    .btn-row { flex: 0 1 auto; margin: 0; gap: 8px; }
+    .progress-track { flex: 1; min-width: 50px; margin: 0; order: 0; }
+    .btn-row { flex: 0 1 auto; margin: 0; gap: 8px; order: 1; }
     .nav-btn { padding: 14px 18px; font-size: 17px; }
     .btn-play {
       width: auto;
       margin: 0;
-      padding: 14px 16px;
-      font-size: 16px;
+      padding: 12px 14px;
+      font-size: 15px;
+      order: 2;
     }
     .view-row {
-      width: 100%;
-      margin: 2px 0 0;
-      gap: 5px;
+      width: auto;
+      flex: 1;
+      margin: 0;
+      gap: 4px;
+      justify-content: flex-end;
+      order: 2;
     }
-    .view-btn { padding: 9px 0; font-size: 13px; }
+    .view-btn { padding: 9px 6px; font-size: 13px; flex: 1; min-width: 0; }
+    .zoom-ctrl { order: 3; width: 100%; justify-content: center; margin: 2px 0 0; }
     .hint { display: none; }
 
     /* PLI 常駐：手機以較小尺寸重繪（見 updatePLI），此處不 scale 避免爆螢幕 */
