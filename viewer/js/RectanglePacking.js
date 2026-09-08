@@ -18,6 +18,7 @@ Algorithm.PackPlis = function(fillHeight, maxWidth, maxHeight, plis, textHeight)
     const WIDTH_ADD = 4; // Spacing between columns.
     // 數量文字寬度比例：0.6 → 0.2（長度縮為 1/3）
     const TEXT_WIDTH_TO_HEIGHT_RATIO = 0.2;
+    const Y_GAP = 6; // 零件上下間距（padding）
 
     // Placement of text:
     plis.forEach(r => r.MULT_DX = (1+(''+r.mult).length) * textHeight * TEXT_WIDTH_TO_HEIGHT_RATIO);
@@ -124,8 +125,9 @@ Algorithm.PackPlis = function(fillHeight, maxWidth, maxHeight, plis, textHeight)
                                     lineSetDist(prev.LINES_ABOVE, prev.FULL_DX, r.LINES_BELOW, r.FULL_DX));
             // 靠左對齊：r 與 prev 同 x，y 必須在 prev 下方，否則視覺重疊。
             // 原設計 ry<0 時放最頂與 prev 並排、靠「欄內右對齊」分開 x；靠左下改為順排 prev 下方。
-            if (ry < prev.y + prev.FULL_DY) {
-                ry = prev.y + prev.FULL_DY;
+            // Y_GAP：零件上下間的固定間距（padding）。
+            if (ry < prev.y + prev.FULL_DY + Y_GAP) {
+                ry = prev.y + prev.FULL_DY + Y_GAP;
             }
             r.y = ry;
 
