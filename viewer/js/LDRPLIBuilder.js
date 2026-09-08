@@ -212,16 +212,30 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
     let textHeight = (!fillHeight ? maxHeight : maxWidth) / Math.sqrt(this.clickMap.length) * 0.19;
     // 固定字體：不隨零件數/步驟變動（各步驟字體一致）；桌面 20px / 手機 18px
     const baseFont = maxWidth >= 260 ? 20 : 18;
-    // 右側預留帶：容納零件長度數字框/圓形底（PLI 撐開 10%，保持在零件右下方不被切）
-    const annotationReserve = Math.ceil(maxWidth*0.1);
     let [W,H] = Algorithm.PackPlis(fillHeight, maxWidth-4, maxHeight-8, this.clickMap, textHeight);
     const DPR = window.devicePixelRatio;
+    // 自動撐開：PackPlis 後每個 icon 位置已定，測量 annotation（長度數字）實際右緣，
+    // 需要多少右側空間才撐開 canvas——無固定預留百分比，沒有標註的步驟完全不變寬。
+    let needW = maxWidth;
     if(fillHeight) {
+        const g2d = this.canvas.getContext('2d');
+        if(g2d) {
+            const fontPx = baseFont*DPR;
+            g2d.font = parseInt(fontPx) + "px sans-serif";
+            const padX = fontPx*0.2;
+            const margin = 2;
+            this.clickMap.forEach(icon => {
+                if(!icon.annotation) return;
+                const tw = g2d.measureText(icon.annotation).width;
+                const right = (icon.x + icon.FULL_DX + 1)*DPR + tw + padX*2 + margin;
+                needW = Math.max(needW, right/DPR);
+            });
+        }
+        needW = Math.ceil(needW);
         let h = Math.max(100, 12+H);
-        let cw = maxWidth + annotationReserve;
-        this.canvas.width = cw*DPR;
+        this.canvas.width = needW*DPR;
         this.canvas.height = h*DPR;
-        this.canvas.style.width = cw+"px";
+        this.canvas.style.width = needW+"px";
         this.canvas.style.height = h+"px";
     }
     else {
