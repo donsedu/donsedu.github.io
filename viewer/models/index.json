@@ -1,11 +1,12 @@
 [
  {
   "file": "esm-9656-火車-車廂.ldr",
-  "name": "ESM-9656-火車-車廂",
+  "name": "ESM-9656 火車-車廂",
   "steps": 6,
   "parts": 21,
   "fingerprint": "74c94f7cad23c99a5fa784a6",
-  "added_at": "2026-09-07T17:03:54.130537+00:00"
+  "added_at": "2026-09-07T17:03:54.130537+00:00",
+  "series": "9656"
  },
  {
   "file": "crossbow_v2_fixed.ldr",
@@ -13,6 +14,7 @@
   "steps": 21,
   "parts": 2144,
   "fingerprint": "8136601b9a2996920e7db858",
-  "added_at": "2026-09-07T00:00:00+00:00"
+  "added_at": "2026-09-07T00:00:00+00:00",
+  "series": "9686"
  }
 ]

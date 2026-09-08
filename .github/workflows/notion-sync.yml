@@ -1,0 +1,48 @@
+name: Notion Sync
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: '手動同步備註（選填）'
+        required: false
+        type: string
+  schedule:
+    # 每天 22:00 UTC = 台灣 06:00
+    - cron: '0 22 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: notion-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Sync from Notion
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        run: python3 repo-scripts/lego-upload/notion-sync.py "$PWD"
+
+      - name: Commit & push
+        run: |
+          git config user.name "LEGO Sync Bot"
+          git config user.email "lego-sync@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "無變更"
+          else
+            git commit -m "🤖 Notion 同步：模型目錄更新"
+            git push
+            echo "已 push"
+          fi
