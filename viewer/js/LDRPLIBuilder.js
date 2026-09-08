@@ -214,10 +214,10 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
     const baseFont = maxWidth >= 260 ? 20 : 18;
     let [W,H] = Algorithm.PackPlis(fillHeight, maxWidth-4, maxHeight-8, this.clickMap, textHeight);
     const DPR = window.devicePixelRatio;
-    // 自動撐開：PackPlis 後每個 icon 位置已定，估算 annotation（長度數字）實際右緣，
-    // 需要多少右側空間才撐開 canvas。字元寬用固定 0.62*fontPx（跨瀏覽器一致，
-    // Safari/Chrome measureText 差異會造成卡寬不同 → 右側空白不一致）。
-    let needW = maxWidth;
+    // 自動撐開：PackPlis 後每個 icon 位置已定，估算 annotation（長度數字）實際右緣。
+    // 字元寬用固定 0.62*fontPx（跨瀏覽器一致）。寬度 = max(內容打包寬 W, annotation 需求)，
+    // 不超過 maxWidth → 高先滿的步驟不會在右側留大空白、卡寬貼內容。
+    let needW = 0;
     if(fillHeight) {
         const g2d = this.canvas.getContext('2d');
         if(g2d) {
@@ -231,11 +231,12 @@ LDR.PLIBuilder.prototype.drawPLIForStep = function(fillHeight, step, maxWidth, m
                 needW = Math.max(needW, right/DPR);
             });
         }
-        needW = Math.ceil(needW);
+        let cw = Math.max(Math.ceil(W) + 2, Math.ceil(needW));
+        cw = Math.min(Math.max(cw, 60), maxWidth); // 貼內容但不大於上限
         let h = Math.max(100, 12+H);
-        this.canvas.width = needW*DPR;
+        this.canvas.width = cw*DPR;
         this.canvas.height = h*DPR;
-        this.canvas.style.width = needW+"px";
+        this.canvas.style.width = cw+"px";
         this.canvas.style.height = h+"px";
     }
     else {

@@ -50,7 +50,10 @@ Algorithm.PackPlis = function(fillHeight, maxWidth, maxHeight, plis, textHeight)
 
     function textBoxDist(prev, r) {
         if(r.DX < prev.FULL_DX-prev.MULT_DX) {
-            return -999999; // No overlap between r and the text boxes of prev.
+            // 寬度懸殊（r 遠窄於 prev）：原設計回 -999999 讓 r 與 prev 同列並排，
+            // 但並排依賴「欄內右對齊」分開 x（x = w - FULL_DX）。靠左對齊下 x 相同會重疊，
+            // 故改為順排下方（回 prev 總高），保持左緣對齊且不重疊。
+            return prev.FULL_DY;
         }
 
         // x1 and x2 are positions of lower point below multiplier of prev.
@@ -117,11 +120,14 @@ Algorithm.PackPlis = function(fillHeight, maxWidth, maxHeight, plis, textHeight)
 
             // Attempt to place r below prev:
             r.x = prev.x;
-            r.y = prev.y + Math.max(textBoxDist(prev, r),
+            let ry = prev.y + Math.max(textBoxDist(prev, r),
                                     lineSetDist(prev.LINES_ABOVE, prev.FULL_DX, r.LINES_BELOW, r.FULL_DX));
-            if(r.y < 0) {
-                r.y = 0; // Special case where r can be placed really high up.
+            // 靠左對齊：r 與 prev 同 x，y 必須在 prev 下方，否則視覺重疊。
+            // 原設計 ry<0 時放最頂與 prev 並排、靠「欄內右對齊」分開 x；靠左下改為順排 prev 下方。
+            if (ry < prev.y + prev.FULL_DY) {
+                ry = prev.y + prev.FULL_DY;
             }
+            r.y = ry;
 
             if(r.y + r.FULL_DY > maxHeight) {
                 alignInColumn(i);
