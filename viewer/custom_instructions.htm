@@ -984,6 +984,17 @@
   } else {
     main();
   }
+
+  // iPad/手機瀏覽器保險：body 高度強制 = 實際可視高（window.innerHeight）。
+  // 某些瀏覽器（含 iPadOS Chrome）100vh/100dvh 仍把底部工具列算進視口，
+  // 造成底部操作列被推到可視範圍外 → 每次 resize/轉向都重新貼齊。
+  function fitBodyHeight() {
+    var h = window.innerHeight;
+    if (h > 0) document.body.style.height = h + 'px';
+  }
+  window.addEventListener('resize', fitBodyHeight);
+  window.addEventListener('orientationchange', function() { setTimeout(fitBodyHeight, 250); });
+  fitBodyHeight();
 </script>
 </body>
 </html>
