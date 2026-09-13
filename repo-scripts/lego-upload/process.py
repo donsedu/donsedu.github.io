@@ -158,13 +158,13 @@ def main():
     recent = index[:3]
     cards = []
     for m in recent:
-        cards.append(f'''    <a class="card" href="custom_instructions.htm?model={m['file'][:-4]}&_t={int(datetime.now(timezone.utc).timestamp())}">
+        cards.append(f'''    <div class="card-wrap"><a class="card" href="custom_instructions.htm?model={m['file'][:-4]}&_t={int(datetime.now(timezone.utc).timestamp())}">
       <img class="thumb" src="thumbnails/{m['file'][:-4]}.png?v={int(datetime.now(timezone.utc).timestamp())}" alt="{m['name']}">
       <div class="card-body">
         <div class="card-name">{m['name']}</div>
         <div class="card-meta"><span class="pill">🧱 {m['steps']} 步驟</span><span class="pill">📋 互動 3D</span></div>
       </div>
-    </a>''')
+    </a><button class="qr-btn" data-model="{m['file'][:-4]}" data-name="{m['name']}" title="顯示 QR code" aria-label="顯示 QR code">QR</button></div>''')
     html = _page_html(cards)
     open(index_html, 'w', encoding='utf-8').write(html)
 
@@ -262,6 +262,32 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   .card-name { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
   .card-meta { font-size: 12px; color: #8b8f98; }
   .card-meta .pill { background: #2a2e35; padding: 2px 10px; border-radius: 999px; margin-right: 6px; }
+  .card-wrap { position: relative; }
+  .qr-btn {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    background: rgba(20,22,26,0.85); color: #e8e6e1; border: 1px solid #3a3f48;
+    border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 800;
+    cursor: pointer; font-family: inherit; backdrop-filter: blur(4px);
+    transition: 0.2s;
+  }
+  .qr-btn:hover { background: #e8722a; border-color: #e8722a; color: #fff; }
+  .qr-overlay {
+    position: fixed; inset: 0; background: rgba(10,12,16,0.82);
+    display: none; align-items: center; justify-content: center; z-index: 60;
+  }
+  .qr-overlay.show { display: flex; }
+  .qr-panel {
+    background: #1e2126; border: 1px solid #2a2e35; border-radius: 16px;
+    padding: 24px; width: min(360px, 90vw); text-align: center;
+  }
+  .qr-model-name { font-size: 15px; font-weight: 800; margin-bottom: 16px; color: #e8e6e1; }
+  .qr-box {
+    background: #fff; border-radius: 12px; padding: 14px;
+    display: inline-block; line-height: 0;
+  }
+  .qr-box canvas, .qr-box img { display: block; }
+  .qr-url { font-size: 11px; color: #8b8f98; margin-top: 12px; word-break: break-all; }
+  .qr-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: center; }
 </style>
 </head>
 <body>
@@ -274,6 +300,18 @@ _PAGE_TEMPLATE = """<!DOCTYPE html>
   <div id="banner" class="banner"></div>
   <div class="grid">
 __CARDS__
+  </div>
+</div>
+
+<div class="qr-overlay" id="qrOverlay">
+  <div class="qr-panel">
+    <div class="qr-model-name" id="qrModelName"></div>
+    <div class="qr-box" id="qrBox"></div>
+    <div class="qr-url" id="qrUrl"></div>
+    <div class="qr-actions">
+      <button class="btn btn-ghost" id="btnQrClose">關閉</button>
+      <button class="btn btn-primary" id="btnQrDownload">下載 PNG</button>
+    </div>
   </div>
 </div>
 
@@ -297,8 +335,42 @@ __CARDS__
     </div>
   </div>
 </div>
+<script src="js/qrcode.min.js"></script>
 <script>
 const WORKER_URL = '__WORKER_URL__';
+
+// ===== QR code 功能 =====
+let qrCurrentModel = '';
+document.querySelectorAll('.qr-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    showQr(btn.dataset.model, btn.dataset.name);
+  });
+});
+function showQr(model, name) {
+  qrCurrentModel = model;
+  const url = 'https://dons.tw/viewer/custom_instructions.htm?model=' + encodeURIComponent(model);
+  document.getElementById('qrModelName').textContent = name || model;
+  document.getElementById('qrUrl').textContent = url;
+  const box = document.getElementById('qrBox');
+  box.innerHTML = '';
+  new QRCode(box, { text: url, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
+  document.getElementById('qrOverlay').classList.add('show');
+}
+document.getElementById('btnQrClose').onclick = () =>
+  document.getElementById('qrOverlay').classList.remove('show');
+document.getElementById('btnQrDownload').onclick = () => {
+  const c = document.querySelector('#qrBox canvas');
+  const img = document.querySelector('#qrBox img');
+  let href = '';
+  if (c) href = c.toDataURL('image/png');
+  else if (img) href = img.src;
+  if (!href) return;
+  const a = document.createElement('a');
+  a.download = qrCurrentModel + '-qr.png';
+  a.href = href;
+  a.click();
+};
 const banner = document.getElementById('banner');
 const overlay = document.getElementById('uploadOverlay');
 const dropzone = document.getElementById('dropzone');
