@@ -1,0 +1,2422 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>邏輯機器人</title>
+<style>
+  :root {
+    --bg: #1a2431;
+    --panel: #223043;
+    --panel-2: #2b3c52;
+    --panel-3: #34485f;
+    --line: #3b4f69;
+    --text: #e8eef5;
+    --muted: #93a4b8;
+    --accent: #4a86e8;
+    --accent-2: #ffd95e;
+    --ok: #57c785;
+    --danger: #e4572e;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: "PingFang TC", "Heiti TC", "Noto Sans TC", -apple-system, "Helvetica Neue", sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  #app { display: flex; gap: 14px; padding: 14px; height: 100%; align-items: flex-start; }
+
+  /* ── 左：遊戲場景 ── */
+  #left { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  #stage { display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,.35);
+           max-width: 100%; height: auto; touch-action: manipulation; }
+  #topbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #topbar select {
+    flex: 1 1 220px; min-width: 160px;
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 12px; min-height: 44px; font: inherit; font-size: 14px;
+  }
+  #status { font-size: 14px; font-weight: 600; min-height: 22px; }
+  .s-won { color: var(--ok); }
+  .s-run { color: var(--accent-2); }
+  .s-bad { color: #ff8f8f; }
+
+  /* ── 右：資訊 + 編輯器 ── */
+  #side {
+    flex: 0 0 380px; background: var(--panel); border-radius: 12px;
+    padding: 14px; display: flex; flex-direction: column; gap: 12px;
+    max-height: 100%; overflow-y: auto;
+  }
+  h1 { font-size: 16px; margin: 0; letter-spacing: -.01em; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px;
+           background: var(--panel-3); color: var(--muted); vertical-align: middle; font-weight: 400; }
+  #hint { font-size: 13px; line-height: 1.6; color: #c8d6e5; background: var(--panel-2);
+          padding: 10px 12px; border-radius: 8px; border-left: 3px solid var(--accent); }
+  #stats { font-size: 13px; line-height: 1.8; color: var(--muted); }
+  #stats b { color: var(--text); }
+  #stats .over { color: #ff8f8f; }
+
+  /* 控制列 */
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.ctl {
+    flex: 1 1 auto; font: inherit; font-size: 14px; font-weight: 600;
+    border-radius: 8px; border: 1px solid transparent; padding: 10px 12px;
+    min-height: 48px; background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button.ctl.ghost { background: var(--panel-2); color: var(--text); border-color: var(--line); }
+  button.ctl:hover { filter: brightness(1.08); }
+  button.ctl:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* ── 編輯器 ── */
+  .ed-palette-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .ed-palette-items { display: flex; flex-wrap: wrap; gap: 6px; }
+  button.ed-pal {
+    font: inherit; font-size: 13px; padding: 9px 12px; min-height: 44px;
+    background: var(--panel-3); color: var(--text); border: 1px solid var(--line);
+    border-radius: 9px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  }
+  button.ed-pal:hover { background: #3d577a; }
+  .ed-ic { font-size: 14px; line-height: 1; }
+
+  .ed-focusbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: #2f4a34; border: 1px solid #3f6b46; border-radius: 8px;
+    padding: 6px 10px; font-size: 12px;
+  }
+  .ed-focus-text { color: #bfe6c6; }
+
+  .ed-program {
+    background: #182533; border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px; min-height: 120px; display: flex; flex-direction: column; gap: 4px;
+    outline: none;
+  }
+  .ed-program.ed-dragover { border-color: var(--accent); background: #1d2f42; }
+
+  .ed-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 8px; border-radius: 8px; min-height: 42px;
+    margin-left: calc(var(--depth, 0) * 18px);
+    border: 1px solid transparent; font-size: 13px;
+  }
+  .ed-row-block { background: var(--panel-3); border-color: #40566f; cursor: grab; }
+  .ed-row-block:active { cursor: grabbing; }
+  .ed-row-repeat { background: #35506b; border-color: #4a6b8c; font-weight: 600; cursor: grab; }
+  .ed-row-close { min-height: 18px; padding: 0 8px; }
+  .ed-brace { color: #7fa4c9; font-size: 18px; line-height: 1; }
+  .ed-row-empty { border: 1px dashed #3a4d63; color: #56698a; justify-content: center; min-height: 34px; }
+  .ed-empty-dash { letter-spacing: 3px; font-size: 12px; }
+
+  .ed-row.ed-exec { box-shadow: 0 0 0 2px var(--accent-2); background: #4a4526; border-color: var(--accent-2); }
+  .ed-row.ed-focus-target { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok); }
+  .ed-row.ed-dragging { opacity: .4; }
+  .ed-row.ed-dropok { border-color: var(--accent-2); border-style: dashed; }
+
+  .ed-grip { color: #6f8399; font-size: 13px; cursor: grab; }
+  .ed-label { flex: 1 1 auto; }
+  .ed-count { min-width: 18px; text-align: center; font-weight: 700; color: var(--accent-2); }
+  .ed-times { font-size: 12px; color: var(--muted); }
+
+  button.ed-btn {
+    font: inherit; font-size: 12px; background: #24303f; color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px; cursor: pointer;
+    min-width: 30px; min-height: 30px; padding: 0 6px;
+  }
+  button.ed-btn:hover { background: #2f4054; }
+  button.ed-btn.ed-step { min-width: 34px; min-height: 34px; font-size: 15px; font-weight: 700; }
+  button.ed-btn.ed-danger:hover { background: #5a2a20; border-color: var(--danger); }
+  button.ed-btn.ed-enter { padding: 0 10px; }
+
+  .ed-hintline { font-size: 12px; line-height: 1.6; color: var(--muted); min-height: 18px; }
+  .ed-hintline-warn { color: #ffcf7a; }
+
+  .kbd { font-size: 11px; color: var(--muted); line-height: 1.7; }
+
+  @media (max-width: 940px) {
+    #app { flex-direction: column; height: auto; }
+    #side { flex: 1 1 auto; width: 100%; max-height: none; }
+  }
+</style>
+</head>
+<body>
+  <div id="app">
+    <div id="left">
+      <div id="topbar">
+        <select id="level" aria-label="選擇關卡"></select>
+        <div id="status"></div>
+      </div>
+      <div id="stage">
+        <canvas id="board"></canvas>
+      </div>
+      <div class="kbd">
+        按鍵：<b>空白</b> 執行／停止　<b>N</b> 單步　<b>R</b> 重來　<b>←→</b> 換關卡
+      </div>
+    </div>
+
+    <div id="side">
+      <h1>邏輯機器人 <span class="badge" id="ver">M3 編輯器</span></h1>
+
+      <div id="hint">—</div>
+
+      <div class="controls">
+        <button class="ctl" id="run">▶ 執行</button>
+        <button class="ctl ghost" id="stepbtn">⏭ 單步</button>
+        <button class="ctl ghost" id="reset">↻ 重來</button>
+      </div>
+      <div class="controls">
+        <button class="ctl ghost" id="clearbtn">清空程式</button>
+        <button class="ctl ghost" id="showans">💡 看解答</button>
+      </div>
+
+      <div id="stats"></div>
+
+      <div class="ed" id="editor"></div>
+    </div>
+  </div>
+
+  <script>
+/* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
+   來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/editor.js, js/main.js
+   建置：2026-09-16T10:03:23.890Z
+*/
+(function () {
+'use strict';
+
+// ══════════ js/world.js ══════════
+/**
+ * world.js — 遊戲世界模型（純邏輯，零渲染）
+ *
+ * 資料模型：2D 高度圖（heightmap），不是 3D voxel 世界。
+ *   tiles[x][y] = { h: 高度, isLight: 是否燈泡格, lit: 是否已亮 }
+ *
+ * 這支檔案不含任何畫面、DOM、Canvas 相關程式碼，
+ * 所以可以被 Node 直接 import 做單元測試。
+ */
+
+/** 方向向量：0=se, 1=ne, 2=nw, 3=sw（自 haan/Lightbot 原始碼核對） */
+const DELTA = Object.freeze({
+  0: Object.freeze({ dx: 0, dy: -1 }),   // se
+  1: Object.freeze({ dx: 1, dy: 0 }),    // ne
+  2: Object.freeze({ dx: 0, dy: 1 }),    // nw
+  3: Object.freeze({ dx: -1, dy: 0 }),   // sw
+});
+
+const FACING_NAME = Object.freeze({ 0: 'se', 1: 'ne', 2: 'nw', 3: 'sw' });
+
+/** 玩家可用的動作指令（不含 repeat，repeat 由執行引擎處理） */
+const ACTIONS = Object.freeze(['walk', 'jump', 'light', 'turnLeft', 'turnRight']);
+
+class World {
+  /**
+   * @param {object} tiles 二維陣列 tiles[x][y] = { h, isLight, lit }
+   * @param {{x:number,y:number,facing:number}} start
+   */
+  constructor(tiles, start) {
+    this.tiles = tiles;
+    this.size = { x: tiles.length, y: tiles[0].length };
+    this.start = { ...start };
+    this.reset();
+  }
+
+  reset() {
+    this.x = this.start.x;
+    this.y = this.start.y;
+    this.facing = this.start.facing;
+    this.executedSteps = 0;
+    for (const col of this.tiles) {
+      for (const t of col) t.lit = false;
+    }
+  }
+
+  inBounds(x, y) {
+    return x >= 0 && y >= 0 && x < this.size.x && y < this.size.y;
+  }
+
+  tileAt(x, y) {
+    return this.inBounds(x, y) ? this.tiles[x][y] : null;
+  }
+
+  get currentTile() {
+    return this.tiles[this.x][this.y];
+  }
+
+  /** 面向的前一格座標 */
+  get aheadPos() {
+    const d = DELTA[this.facing];
+    return { x: this.x + d.dx, y: this.y + d.dy };
+  }
+
+  /** 該格是否為燈泡格（且未亮） */
+  lightTilesRemaining() {
+    let n = 0;
+    for (const col of this.tiles) {
+      for (const t of col) if (t.isLight && !t.lit) n++;
+    }
+    return n;
+  }
+
+  /** 全部燈泡都亮了？ */
+  isSolved() {
+    return this.lightTilesRemaining() === 0;
+  }
+
+  // ── 移動判定（純函式，方便單獨測試）──────────────
+
+  /** 前進一格：目標格必須存在，且高度完全相同 */
+  isWalkable() {
+    const { x, y } = this.aheadPos;
+    if (!this.inBounds(x, y)) return false;
+    return this.tiles[x][y].h === this.currentTile.h;
+  }
+
+  /** 跳躍：往上只能剛好 +1；往下任何深度都可以 */
+  isJumpable() {
+    const { x, y } = this.aheadPos;
+    if (!this.inBounds(x, y)) return false;
+    const dh = this.tiles[x][y].h - this.currentTile.h;
+    return dh === 1 || dh < 0;
+  }
+
+  // ── 動作（無效時靜默忽略，不算失敗）────────────────
+
+  walk() {
+    if (!this.isWalkable()) return false;
+    const { x, y } = this.aheadPos;
+    this.x = x;
+    this.y = y;
+    return true;
+  }
+
+  jump() {
+    if (!this.isJumpable()) return false;
+    const { x, y } = this.aheadPos;
+    this.x = x;
+    this.y = y;
+    return true;
+  }
+
+  /** 點燈是 toggle：已亮的格再按一次會變暗 */
+  light() {
+    const t = this.currentTile;
+    if (!t.isLight) return false;
+    t.lit = !t.lit;
+    return true;
+  }
+
+  turnLeft() {
+    this.facing = (this.facing + 3) % 4;
+    return true;
+  }
+
+  turnRight() {
+    this.facing = (this.facing + 1) % 4;
+    return true;
+  }
+
+  /** 依名稱執行動作 */
+  apply(action) {
+    if (typeof this[action] !== 'function' || !ACTIONS.includes(action)) {
+      throw new Error(`World.apply: 未知動作 "${action}"`);
+    }
+    return this[action]();
+  }
+
+  /** 給 UI 顯示用的狀態快照 */
+  snapshot() {
+    return {
+      x: this.x,
+      y: this.y,
+      facing: this.facing,
+      facingName: FACING_NAME[this.facing],
+      executedSteps: this.executedSteps,
+      litCount: this.tiles.flat().filter((t) => t.isLight && t.lit).length,
+      totalLights: this.tiles.flat().filter((t) => t.isLight).length,
+      solved: this.isSolved(),
+    };
+  }
+}
+
+
+// ══════════ js/engine.js ══════════
+/**
+ * engine.js — 執行引擎（展開式佇列，純邏輯）
+ *
+ * 為什麼用「展開式佇列」而不是呼叫堆疊：
+ *   1. repeat 的重複次數由玩家設定 → 天生有界 → 不可能無限迴圈
+ *   2. 佇列可以直接視覺化（給 UI 顯示「接下來要跑什麼」）
+ *   3. 單步執行（教學最重要功能）只要「取一個、跑一個」就完成了
+ *
+ * 每個佇列項目都帶著 path（在程式樹中的位置路徑），
+ * 讓 UI 可以高亮「目前執行到哪一個指令積木」。
+ */
+
+
+/** 預設最大執行步數：即使 repeat 天生有界，巢狀仍可能組合出很大的執行量 */
+const DEFAULT_MAX_STEPS = 2000;
+
+const STATUS = Object.freeze({
+  IDLE: 'idle',           // 還沒開始
+  RUNNING: 'running',     // 執行中
+  WON: 'won',             // 過關
+  STUCK: 'stuck',         // 超過步數上限
+  EXHAUSTED: 'exhausted', // 程式跑完但沒過關
+});
+
+/**
+ * 程式結構檢查。
+ * 專門攔下最容易犯的錯：把「指令陣列」誤放成「單一指令節點」
+ * （例如 body 寫成 [W(1)] 而不是 [...W(1)]，會讓 name 變成 undefined）。
+ * 有了這個，錯誤訊息會直接指出位置，而不是後面才冒出「未知動作 undefined」。
+ */
+function assertWellFormed(nodes, where = '程式') {
+  if (!Array.isArray(nodes)) {
+    throw new Error(`${where} 必須是陣列，收到 ${typeof nodes}`);
+  }
+  nodes.forEach((node, i) => {
+    const at = `${where}[${i}]`;
+    if (Array.isArray(node)) {
+      throw new Error(`${at} 是陣列而不是指令 —— 這邊可能多包了一層（例如寫成 [W(1)]，應為 [...W(1)]）`);
+    }
+    if (!node || typeof node !== 'object') {
+      throw new Error(`${at} 不是有效的指令（收到 ${JSON.stringify(node)}）`);
+    }
+    if (typeof node.name !== 'string') {
+      throw new Error(`${at} 缺少 name 欄位`);
+    }
+    if (node.name === 'repeat') {
+      if (!Number.isInteger(node.counter) || node.counter < 1) {
+        throw new Error(`${at}.counter 必須是 1 以上的整數（收到 ${node.counter}）`);
+      }
+      assertWellFormed(node.body, `${at}.body`);
+    } else if (!ACTIONS.includes(node.name)) {
+      throw new Error(`${at} 未知的指令「${node.name}」`);
+    }
+  });
+}
+
+/** repeat 積木的本體複製一份（避免展開時共用同一個陣列） */
+function cloneBody(body) {
+  return body.map((node) =>
+    node.name === 'repeat'
+      ? { name: 'repeat', counter: node.counter, body: cloneBody(node.body) }
+      : { ...node }
+  );
+}
+
+/**
+ * 獎牌成本 = **只算最上層的積木數**，`repeat` 算 1 個（重複裡的積木不算）。
+ *
+ * ⚠️ 這不是「程式總共幾個積木」（那要用 program.countAllBlocks 遞迴算）。
+ * 只算最上層是刻意的：這樣 `repeat 4 { walk }`（1 個積木）才會明顯優於
+ * 手寫 `walk, walk, walk, walk`（4 個積木），學生才有動機去用迴圈。
+ */
+function countInstructions(program) {
+  return program.length;
+}
+
+/** 檢查程式是否只用了關卡開放的指令 */
+function validateProgram(program, allowed, hasNestedRepeat = false) {
+  const errors = [];
+  const walk = (nodes, insideRepeat) => {
+    for (const node of nodes) {
+      if (node.name === 'repeat') {
+        if (!allowed.includes('repeat')) {
+          errors.push(`這一關沒有開放「重複」積木`);
+        }
+        if (insideRepeat && !hasNestedRepeat) {
+          errors.push(`這一關不允許巢狀的「重複」`);
+        }
+        if (!Number.isInteger(node.counter) || node.counter < 1) {
+          errors.push(`「重複」次數必須是 1 以上的整數（收到 ${node.counter}）`);
+        }
+        if (!Array.isArray(node.body) || node.body.length === 0) {
+          errors.push(`「重複」積木裡面是空的`);
+        } else {
+          walk(node.body, true);
+        }
+      } else if (!ACTIONS.includes(node.name)) {
+        errors.push(`未知的指令「${node.name}」`);
+      } else if (!allowed.includes(node.name)) {
+        errors.push(`這一關沒有開放「${node.name}」`);
+      }
+    }
+  };
+  walk(program, false);
+  return errors;
+}
+
+class Interpreter {
+  /**
+   * @param {World} world
+   * @param {{maxSteps?: number}} options
+   */
+  constructor(world, options = {}) {
+    if (!(world instanceof World)) throw new Error('Interpreter 需要一個 World 實例');
+    this.world = world;
+    this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
+    this.program = [];
+    this.queue = [];
+    this.status = STATUS.IDLE;
+    this.executedSteps = 0;
+    this.currentPath = null;   // 目前（或最後）執行的積木路徑
+    this.lastAction = null;
+    this.reset();
+  }
+
+  /** 載入程式（會複製一份，之後呼叫端改動原陣列不影響執行） */
+  load(program) {
+    assertWellFormed(program);
+    this.program = cloneBody(program);
+    this.reset();
+    return this;
+  }
+
+  reset() {
+    this.world.reset();
+    this.executedSteps = 0;
+    this.status = STATUS.IDLE;
+    this.currentPath = null;
+    this.lastAction = null;
+    this.queue = this.program.map((instr, i) => ({ instr, path: [i] }));
+    if (this.queue.length > 0) this.status = STATUS.RUNNING;
+  }
+
+  get isRunning() {
+    return this.status === STATUS.RUNNING;
+  }
+
+  get totalInstructions() {
+    return countInstructions(this.program);
+  }
+
+  /** 佇列裡剩下的動作數（含 repeat 尚未展開的部分，僅供粗略顯示） */
+  get queueLength() {
+    return this.queue.length;
+  }
+
+  /**
+   * 執行一個指令。
+   * 回傳 null 表示已經結束；否則回傳這次執行的紀錄（給 UI 播動畫用）。
+   */
+  step() {
+    if (this.status !== STATUS.RUNNING) return null;
+
+    if (this.executedSteps >= this.maxSteps) {
+      this.status = STATUS.STUCK;
+      return null;
+    }
+
+    if (this.queue.length === 0) {
+      this.status = this.world.isSolved() ? STATUS.WON : STATUS.EXHAUSTED;
+      return null;
+    }
+
+    const { instr, path } = this.queue.shift();
+
+    // ── repeat：把本體展開推回佇列前端，本身不算一步 ──
+    if (instr.name === 'repeat') {
+      const body = cloneBody(instr.body);
+      const expanded = [];
+      for (let k = 0; k < instr.counter; k++) {
+        for (let j = 0; j < body.length; j++) {
+          expanded.push({ instr: body[j], path: [...path, j] });
+        }
+      }
+      this.queue.unshift(...expanded);
+      return this.step(); // 立刻處理下一個（遞迴深度 = 巢狀層數，很淺）
+    }
+
+    // ── 一般動作 ──
+    const moved = this.world.apply(instr.name);
+    this.world.executedSteps += 1;
+    this.executedSteps += 1;
+    this.currentPath = path;
+    this.lastAction = {
+      action: instr.name,
+      path,
+      moved,                       // 動作是否真的生效（撞牆會是 false，但不是失敗）
+      snapshot: this.world.snapshot(),
+    };
+
+    // ★ 每個動作後立即檢查勝利（不是等程式跑完）
+    if (this.world.isSolved()) {
+      this.status = STATUS.WON;
+    } else if (this.queue.length === 0) {
+      this.status = STATUS.EXHAUSTED;
+    }
+    return this.lastAction;
+  }
+
+  /** 一次跑到結束（或到步數上限） */
+  run() {
+    // 先確保重置過
+    if (this.status === STATUS.IDLE) this.reset();
+    let guard = 0;
+    while (this.status === STATUS.RUNNING) {
+      if (guard++ > this.maxSteps + 10) {
+        this.status = STATUS.STUCK;
+        break;
+      }
+      this.step();
+    }
+    return this.status;
+  }
+
+  /**
+   * 執行到結束並收集每一步的紀錄（給「回放」功能用）。
+   * @returns {{status:string, steps:number, records:Array}}
+   */
+  runWithTrace() {
+    this.reset();
+    const records = [];
+    let guard = 0;
+    while (this.status === STATUS.RUNNING) {
+      if (guard++ > this.maxSteps + 10) {
+        this.status = STATUS.STUCK;
+        break;
+      }
+      const rec = this.step();
+      if (rec) records.push(rec);
+    }
+    return { status: this.status, steps: this.executedSteps, records };
+  }
+
+  /**
+   * 獎牌判定。gold/silver/bronze 是「指令數」門檻（比門檻小或相等就拿到）。
+   * repeat 只算 1 個指令 —— 所以用迴圈可以把程式壓短、拿到更好的獎牌。
+   */
+  medal(thresholds) {
+    if (this.status !== STATUS.WON) return null;
+    const n = this.totalInstructions;
+    if (n <= thresholds.gold) return 'gold';
+    if (n <= thresholds.silver) return 'silver';
+    if (n <= thresholds.bronze) return 'bronze';
+    return null;
+  }
+}
+
+
+// ══════════ js/program.js ══════════
+/**
+ * program.js — 程式資料模型與編輯操作（純邏輯，零 DOM）
+ *
+ * 程式是一棵樹：
+ *   program = [ block, block, ... ]
+ *   block   = { name: 'walk' }                        ← 一般動作
+ *           | { name: 'repeat', counter: N, body: [] } ← 重複積木
+ *
+ * 為什麼要獨立成一個模組：
+ *   編輯器的所有操作（新增、刪除、移動、包成重複）都在這裡，
+ *   而且全部是**純函式、回傳新程式**（不改動輸入）。
+ *   → 可以在 Node 裡完整單元測試，不需要瀏覽器
+ *   → 之後要做「復原（undo）」只要留著舊的程式物件就好
+ *
+ * path 的定義與 engine.js 完全一致：
+ *   [2]       → 主程式的第 2 個積木
+ *   [1, 0]    → 主程式第 1 個積木（repeat）的 body 第 0 項
+ */
+
+const DEFAULT_LIMITS = Object.freeze({ main: 12, repeat: 3, depth: 2 });
+
+/** 可用在積木盤上的動作積木（repeat 另外處理） */
+const PALETTE = Object.freeze(['walk', 'jump', 'light', 'turnLeft', 'turnRight']);
+
+const BLOCK_LABEL = Object.freeze({
+  walk: '走一步',
+  jump: '跳',
+  light: '點燈',
+  turnLeft: '向左轉',
+  turnRight: '向右轉',
+  repeat: '重複',
+});
+
+// ─────────────────────────────────────────────
+// 建立
+// ─────────────────────────────────────────────
+
+const makeBlock = (name) => ({ name });
+const makeRepeat = (counter = 2, body = []) => ({ name: 'repeat', counter, body });
+
+/** 深層複製整棵樹（避免編輯時動到共用節點） */
+function cloneProgram(program) {
+  return program.map((b) =>
+    b.name === 'repeat'
+      ? { name: 'repeat', counter: b.counter, body: cloneProgram(b.body) }
+      : { ...b }
+  );
+}
+
+/** 空程式 */
+const emptyProgram = () => [];
+
+// ─────────────────────────────────────────────
+// 查詢
+// ─────────────────────────────────────────────
+
+/** 取得某個路徑所指向的「容器」（主程式或某個 repeat 的 body） */
+function getListAt(program, parentPath = []) {
+  let list = program;
+  for (const idx of parentPath) {
+    const node = list[idx];
+    if (!node || node.name !== 'repeat') {
+      throw new Error(`path ${JSON.stringify(parentPath)} 不是 repeat 的位置`);
+    }
+    list = node.body;
+  }
+  return list;
+}
+
+/** 取得某個路徑指向的積木（回傳節點本身，是參考） */
+function getBlockAt(program, path) {
+  if (!path || path.length === 0) return null;
+  const parent = getListAt(program, path.slice(0, -1));
+  return parent[path[path.length - 1]] ?? null;
+}
+
+/** 這個路徑指向的是不是 repeat 積木 */
+function isRepeatAt(program, path) {
+  const b = getBlockAt(program, path);
+  return !!b && b.name === 'repeat';
+}
+
+/**
+ * 全部積木數（**遞迴**計算：重複裡的積木也算）。
+ * 用來顯示「這個程式總共用了幾個積木」。
+ */
+function countAllBlocks(program) {
+  let n = 0;
+  for (const b of program) {
+    n += 1;
+    if (b.name === 'repeat') n += countAllBlocks(b.body);
+  }
+  return n;
+}
+
+/**
+ * ★ 獎牌成本 = **只算最上層的積木數**，`repeat` 算 1 個（裡面的不算）。
+ *
+ * 為什麼只算最上層：獎牌要獎勵「用抽象把事情變簡單」。
+ * 如果連重複裡的積木也一起算，`repeat 2 { walk }` 和手寫 `walk, walk`
+ * 會是同一個分數 —— 學生就沒有動機去想迴圈，關卡的教學目的會失效。
+ *
+ * （這與 engine.countInstructions 是同一個定義。）
+ */
+function medalCost(program) {
+  return program.length;
+}
+
+/** 最深的巢狀層數（1 = 只有主程式） */
+function nestingDepth(program, level = 1) {
+  let deepest = level;
+  for (const b of program) {
+    if (b.name === 'repeat') {
+      deepest = Math.max(deepest, nestingDepth(b.body, level + 1));
+    }
+  }
+  return deepest;
+}
+
+/**
+ * 檢查所有限制，回傳問題清單（空陣列 = 通過）。
+ * 限制是關卡設計工具：格數要設得「剛好逼出預期的解法」。
+ */
+function checkLimits(program, limits = DEFAULT_LIMITS) {
+  const L = { ...DEFAULT_LIMITS, ...limits };
+  const problems = [];
+
+  if (program.length > L.main) {
+    problems.push({ where: [], kind: 'main_full', msg: `主程式只能放 ${L.main} 個積木` });
+  }
+
+  const walk = (list, parentPath, depth) => {
+    if (depth > L.depth) {
+      problems.push({
+        where: parentPath, kind: 'too_deep',
+        msg: `「重複」最多只能疊 ${L.depth} 層`,
+      });
+    }
+    list.forEach((b, i) => {
+      if (b.name !== 'repeat') return;
+      const p = [...parentPath, i];
+      if (b.body.length > L.repeat) {
+        problems.push({
+          where: p, kind: 'repeat_full',
+          msg: `每個「重複」裡面只能放 ${L.repeat} 個積木`,
+        });
+      }
+      walk(b.body, p, depth + 1);
+    });
+  };
+  walk(program, [], 1);
+
+  return problems;
+}
+
+/** 這個容器還能不能再放積木（放 repeat 時要另外考慮深度與內部格數） */
+function canInsert(program, parentPath, isRepeatBlock, limits = DEFAULT_LIMITS) {
+  const L = { ...DEFAULT_LIMITS, ...limits };
+  const list = getListAt(program, parentPath);
+  const isMain = parentPath.length === 0;
+  const cap = isMain ? L.main : L.repeat;
+
+  if (list.length >= cap) {
+    return {
+      ok: false,
+      reason: isMain
+        ? `主程式只有 ${L.main} 格`
+        : `「重複」裡面只有 ${L.repeat} 格`,
+      hint: isMain && !program.some((b) => b.name === 'repeat')
+        ? '想想看，能不能用「重複」讓程式變短？'
+        : '先刪掉一個，或想想看有沒有更短的寫法。',
+    };
+  }
+
+  if (isRepeatBlock) {
+    const depthHere = parentPath.length === 0 ? 1 : parentPath.length + 1;
+    if (depthHere + 1 > L.depth) {
+      return {
+        ok: false,
+        reason: `「重複」最多只能疊 ${L.depth} 層`,
+        hint: '把裡面那層的重複拿掉試試看。',
+      };
+    }
+  }
+
+  return { ok: true, reason: '', hint: '' };
+}
+
+// ─────────────────────────────────────────────
+// 編輯操作（全部回傳新程式，不改動輸入）
+// ─────────────────────────────────────────────
+
+/**
+ * 在指定容器的最後面追加一個積木。
+ * @param {Array} program
+ * @param {Array<number>} parentPath [] = 主程式，[i] = 第 i 個 repeat 的 body
+ */
+function appendBlock(program, parentPath, block) {
+  const next = cloneProgram(program);
+  const list = getListAt(next, parentPath);
+  list.push(block);
+  return next;
+}
+
+/** 刪除某個路徑的積木（刪掉 repeat 會連裡面的內容一起消失） */
+function removeAt(program, path) {
+  if (!path || path.length === 0) return program;
+  const next = cloneProgram(program);
+  const list = getListAt(next, path.slice(0, -1));
+  list.splice(path[path.length - 1], 1);
+  return next;
+}
+
+/** 清空整個程式（含所有重複內容） */
+function clearProgram() {
+  return [];
+}
+
+/** 在同一個容器內往上／往下移動（delta = -1 或 +1） */
+function moveWithin(program, path, delta) {
+  const next = cloneProgram(program);
+  const list = getListAt(next, path.slice(0, -1));
+  const i = path[path.length - 1];
+  const j = i + delta;
+  if (j < 0 || j >= list.length) return program;
+  [list[i], list[j]] = [list[j], list[i]];
+  return next;
+}
+
+/** a 是不是 b 的祖先（或等於 b） */
+function isPrefix(a, b) {
+  if (a.length > b.length) return false;
+  return a.every((v, i) => v === b[i]);
+}
+
+/**
+ * 移除某個路徑的積木後，修正目標路徑。
+ *
+ * 為什麼需要：`removeAt` 會讓同一個容器裡「後面」的項目索引各往前移一格。
+ * 如果先移除、再拿舊的 path 去操作，就會指到錯的積木（或指到空的）。
+ * 這個 bug 在「把主程式第 0 項搬進主程式第 1 項的重複裡」時一定會踩到。
+ */
+function adjustPathAfterRemoval(targetPath, removedPath) {
+  const i = removedPath.length - 1;
+  if (targetPath.length <= i) return targetPath;      // 目標不在被移除的同層 → 不影響
+  // 共同前綴不同 → 不在同一個容器
+  for (let k = 0; k < i; k++) {
+    if (removedPath[k] !== targetPath[k]) return targetPath;
+  }
+  if (removedPath[i] < targetPath[i]) {
+    const t = targetPath.slice();
+    t[i] -= 1;
+    return t;
+  }
+  return targetPath;
+}
+
+/**
+ * ★ 通用搬移：把 fromPath 的積木搬到 toParentPath 容器的第 toIndex 位。
+ *
+ * 所有拖放行為都收斂到這一個函式，這樣只需要測一處，bug 也只會有一處。
+ * （先前的 moveIntoRepeat 就是在「移除後索引位移」上踩過坑。）
+ */
+function moveTo(program, fromPath, toParentPath, toIndex, limits = DEFAULT_LIMITS) {
+  if (!fromPath || fromPath.length === 0) {
+    return { ok: false, reason: '沒有指定要搬的積木', program };
+  }
+  // 不能把積木搬進自己（或自己的子孫）裡面
+  if (isPrefix(fromPath, toParentPath)) {
+    return { ok: false, reason: '不能把積木搬進自己裡面', program };
+  }
+  const moving = getBlockAt(program, fromPath);
+  if (!moving) return { ok: false, reason: '找不到要搬的積木', program };
+
+  // 目標必須存在（而且是容器）
+  try {
+    getListAt(program, toParentPath);
+  } catch {
+    return { ok: false, reason: '目標位置不是有效的容器', program };
+  }
+
+  const check = canInsert(program, toParentPath, moving.name === 'repeat', limits);
+  if (!check.ok) return { ok: false, reason: check.reason, program };
+
+  // 同一個容器？比對「來源的父路徑」與目標父路徑，不是比對路徑長度
+  const fromParent = fromPath.slice(0, -1);
+  const sameParent =
+    fromParent.length === toParentPath.length &&
+    fromParent.every((v, i) => v === toParentPath[i]);
+
+  let next = removeAt(program, fromPath);
+  const parent = adjustPathAfterRemoval(toParentPath, fromPath);
+  const list = getListAt(next, parent);
+
+  let idx = Number.isInteger(toIndex) ? toIndex : list.length;
+  // 同一個容器且來源在前面 → 移除後索引要往前移一格
+  if (sameParent && fromPath[fromPath.length - 1] < toIndex) idx -= 1;
+  idx = Math.max(0, Math.min(idx, list.length));
+
+  list.splice(idx, 0, cloneProgram([moving])[0]);
+  return { ok: true, reason: '', program: next };
+}
+
+/** 把某個積木搬進指定的 repeat 裡（放在最後面） */
+function moveIntoRepeat(program, fromPath, repeatPath, limits = DEFAULT_LIMITS) {
+  const target = getBlockAt(program, repeatPath);
+  if (!target || target.name !== 'repeat') {
+    return { ok: false, reason: '目標不是「重複」積木', program };
+  }
+  const size = target.body.length;
+  return moveTo(program, fromPath, repeatPath, size, limits);
+}
+
+/** 把 repeat 裡的某個積木搬出來（放到主程式最後面） */
+function moveOutOfRepeat(program, fromPath, limits = DEFAULT_LIMITS) {
+  if (fromPath.length < 2) return { ok: false, reason: '這個積木不在「重複」裡面', program };
+  return moveTo(program, fromPath, [], program.length, limits);
+}
+
+/** 把某個積木包成一個「重複」（原積木變成重複裡的第一項） */
+function wrapInRepeat(program, path, counter = 2, limits = DEFAULT_LIMITS) {
+  const block = getBlockAt(program, path);
+  if (!block) return { ok: false, reason: '找不到這個積木', program };
+  if (block.name === 'repeat') return { ok: false, reason: '「重複」不能再被包成「重複」', program };
+
+  const parentPath = path.slice(0, -1);
+  const depthHere = parentPath.length === 0 ? 1 : parentPath.length + 1;
+  if (depthHere + 1 > (limits.depth ?? DEFAULT_LIMITS.depth)) {
+    return { ok: false, reason: `「重複」最多只能疊 ${limits.depth} 層`, program };
+  }
+
+  const next = cloneProgram(program);
+  const list = getListAt(next, parentPath);
+  const i = path[path.length - 1];
+  list[i] = { name: 'repeat', counter, body: [{ ...block }] };
+  return { ok: true, reason: '', program: next };
+}
+
+/** 把 repeat 拆開（內容直接倒回上一層，取代原本的 repeat 位置） */
+function unwrapRepeat(program, path) {
+  const block = getBlockAt(program, path);
+  if (!block || block.name !== 'repeat') {
+    return { ok: false, reason: '這個積木不是「重複」', program };
+  }
+  const next = cloneProgram(program);
+  const list = getListAt(next, path.slice(0, -1));
+  const i = path[path.length - 1];
+  list.splice(i, 1, ...cloneProgram(block.body));
+  return { ok: true, reason: '', program: next };
+}
+
+/** 設定重複次數（限制 1–9，按鈕加減用） */
+function setCounter(program, path, counter) {
+  const next = cloneProgram(program);
+  const b = getBlockAt(next, path);
+  if (!b || b.name !== 'repeat') return program;
+  b.counter = Math.max(1, Math.min(9, Math.round(counter)));
+  return next;
+}
+
+// ─────────────────────────────────────────────
+// 給 UI 用的扁平化
+// ─────────────────────────────────────────────
+
+/**
+ * 把程式樹攤平成 UI 可以直接畫的一維列。
+ * 每一列都帶 path，所以可以和 engine 回報的「目前執行到哪個積木」直接對應高亮。
+ *
+ * @returns {Array<{
+ *   kind: 'block'|'repeat-open'|'repeat-close'|'empty',
+ *   path: number[], depth: number, block?: object, slot?: number
+ * }>}
+ */
+function flattenProgram(program, limits = DEFAULT_LIMITS) {
+  const L = { ...DEFAULT_LIMITS, ...limits };
+  const rows = [];
+
+  const walk = (list, parentPath, depth) => {
+    list.forEach((b, i) => {
+      const path = [...parentPath, i];
+      if (b.name === 'repeat') {
+        rows.push({ kind: 'repeat-open', path, depth, block: b });
+        walk(b.body, path, depth + 1);
+        rows.push({ kind: 'repeat-close', path, depth, block: b });
+      } else {
+        rows.push({ kind: 'block', path, depth, block: b });
+      }
+    });
+
+    // 空格：只有主程式與每個 repeat 的最後才顯示剩餘容量
+    const isMain = parentPath.length === 0;
+    const cap = isMain ? L.main : L.repeat;
+    for (let s = list.length; s < cap; s++) {
+      rows.push({ kind: 'empty', path: null, depth, slot: s, parentPath });
+    }
+  };
+
+  walk(program, [], 0);
+  return rows;
+}
+
+/** 把目前執行到的 path 轉成「哪一列該高亮」的索引（給 UI 用） */
+function rowIndexForPath(rows, path) {
+  if (!path) return -1;
+  const key = path.join('.');
+  return rows.findIndex((r) => r.path && r.path.join('.') === key);
+}
+
+
+// ══════════ js/levels.js ══════════
+/**
+ * levels.js — 關卡資料（純資料，外部化）
+ *
+ * 關卡是資料不是程式碼：新增關卡不用碰任何邏輯。
+ * 每個關卡都附一個 `solution`（參考解），它同時是：
+ *   1. 文件：說明這關怎麼過
+ *   2. 測試 fixture：`tests/levels.test.js` 會實際跑它並驗證可以過關
+ *   3. 金牌門檻的依據：solution 的指令數 = gold
+ *
+ * ⚠️ 關卡資料的兩條強制規則（違反會產生壞掉的關卡）：
+ *   1. 至少要有一個燈泡格（否則勝利條件恆真，開場即過關）
+ *   2. 有燈泡就必須開放 `light` 指令（否則該關數學上無解）
+ *   → `validateLevel()` 會在載入時擋下來
+ */
+
+/** 產生標準地圖：外圍一圈高牆（h=2）、內部平坦（h=1） */
+function boxHeights(sizeX, sizeY) {
+  const rows = [];
+  for (let x = 0; x < sizeX; x++) {
+    const col = [];
+    for (let y = 0; y < sizeY; y++) {
+      const edge = x === 0 || y === 0 || x === sizeX - 1 || y === sizeY - 1;
+      col.push(edge ? 2 : 1);
+    }
+    rows.push(col);
+  }
+  return rows;
+}
+
+const W = (n = 1) => Array.from({ length: n }, () => ({ name: 'walk' }));
+const J = (n = 1) => Array.from({ length: n }, () => ({ name: 'jump' }));
+const R = (counter, body) => ({ name: 'repeat', counter, body });
+const LIGHT = { name: 'light' };
+const TR = { name: 'turnRight' };
+const TL = { name: 'turnLeft' };
+
+const STD = { x: 9, y: 8 };
+
+const LEVELS = [
+  // ═══════════ 第 1 章：點燈與走路 ═══════════
+  {
+    id: 'ch1-01',
+    chapter: 'basic',
+    title: '點燈',
+    hint: '你就站在藍色格子上。用「點燈」把它點亮。',
+    size: STD,
+    lights: [[4, 4]],
+    start: { x: 4, y: 4, facing: 0 },
+    allowed: ['light'],
+    medals: { gold: 1, silver: 2, bronze: 3 },
+    solution: [LIGHT],
+  },
+  {
+    id: 'ch1-02',
+    chapter: 'basic',
+    title: '走一步再點燈',
+    hint: '往前一步，然後點燈。',
+    size: STD,
+    lights: [[4, 4]],
+    start: { x: 4, y: 5, facing: 0 },
+    allowed: ['walk', 'light'],
+    medals: { gold: 2, silver: 3, bronze: 5 },
+    solution: [...W(1), LIGHT],
+  },
+  {
+    id: 'ch1-03',
+    chapter: 'basic',
+    title: '多走幾步',
+    hint: '要走三步才會到燈的位子。',
+    size: STD,
+    lights: [[4, 2]],
+    start: { x: 4, y: 5, facing: 0 },
+    allowed: ['walk', 'light'],
+    medals: { gold: 4, silver: 5, bronze: 7 },
+    solution: [...W(3), LIGHT],
+  },
+  {
+    id: 'ch1-04',
+    chapter: 'basic',
+    title: '轉個彎',
+    hint: '燈在右邊，不在你前面。先想辦法轉過去。',
+    size: STD,
+    lights: [[6, 4]],
+    start: { x: 4, y: 4, facing: 0 },
+    allowed: ['walk', 'turnLeft', 'turnRight', 'light'],
+    medals: { gold: 4, silver: 5, bronze: 8 },
+    solution: [TR, ...W(2), LIGHT],
+  },
+  {
+    id: 'ch1-05',
+    chapter: 'basic',
+    title: '之字形',
+    hint: '先往前走，再轉彎往前走。分兩段想。',
+    size: STD,
+    lights: [[6, 3]],
+    start: { x: 4, y: 5, facing: 0 },
+    allowed: ['walk', 'turnLeft', 'turnRight', 'light'],
+    medals: { gold: 6, silver: 8, bronze: 11 },
+    solution: [...W(2), TR, ...W(2), LIGHT],
+  },
+
+  // ═══════════ 第 2 章：高度 ═══════════
+  {
+    id: 'ch2-06',
+    chapter: 'height',
+    title: '跳上高台',
+    hint: '前面那格比較高，走不過去。試試看「跳」。',
+    size: STD,
+    platform: [[4, 4, 2]],
+    lights: [[4, 4]],
+    start: { x: 4, y: 5, facing: 0 },
+    allowed: ['walk', 'jump', 'light'],
+    medals: { gold: 2, silver: 3, bronze: 5 },
+    solution: [...J(1), LIGHT],
+  },
+  {
+    id: 'ch2-07',
+    chapter: 'height',
+    title: '跳下來',
+    hint: '往下跳沒有限制，多高都可以。',
+    size: STD,
+    platform: [[4, 4, 3]],
+    lights: [[4, 2]],
+    start: { x: 4, y: 4, facing: 0 },
+    allowed: ['walk', 'jump', 'light'],
+    medals: { gold: 3, silver: 4, bronze: 6 },
+    solution: [...J(1), ...W(1), LIGHT],
+  },
+  {
+    id: 'ch2-08',
+    chapter: 'height',
+    title: '高低起伏',
+    hint: '高度一樣才能「走」，高度不同要用「跳」。',
+    size: STD,
+    platform: [[4, 4, 2]],
+    lights: [[4, 2]],
+    start: { x: 4, y: 5, facing: 0 },
+    allowed: ['walk', 'jump', 'light'],
+    medals: { gold: 4, silver: 6, bronze: 9 },
+    solution: [...J(2), ...W(1), LIGHT],
+  },
+  {
+    id: 'ch2-09',
+    chapter: 'height',
+    title: '階梯登高',
+    hint: '一格一格往上跳。',
+    size: STD,
+    platform: [[4, 4, 2], [4, 3, 3], [4, 2, 4]],
+    lights: [[4, 2]],
+    start: { x: 4, y: 5, facing: 0 },
+    allowed: ['walk', 'jump', 'light'],
+    medals: { gold: 4, silver: 6, bronze: 9 },
+    solution: [...J(3), LIGHT],
+  },
+
+  // ═══════════ 第 3 章：重複 ═══════════
+  {
+    id: 'ch3-10',
+    chapter: 'loop',
+    title: '重複四次',
+    hint: '要走四步。試試「重複」積木，把你的程式變短。',
+    size: STD,
+    lights: [[4, 1]],
+    start: { x: 4, y: 5, facing: 0 },
+    allowed: ['walk', 'light', 'repeat'],
+    medals: { gold: 2, silver: 3, bronze: 5 },
+    solution: [R(4, W(1)), LIGHT],
+  },
+  {
+    id: 'ch3-11',
+    chapter: 'loop',
+    title: '兩段重複',
+    hint: '兩段路都一樣長，各用一個「重複」把它變短。',
+    size: STD,
+    lights: [[6, 3]],
+    start: { x: 4, y: 5, facing: 0 },
+    allowed: ['walk', 'turnRight', 'light', 'repeat'],
+    medals: { gold: 4, silver: 6, bronze: 9 },
+    solution: [R(2, W(1)), TR, R(2, W(1)), LIGHT],
+  },
+];
+
+/**
+ * ★ 格數限制（關卡設計工具，不是為了刁難）
+ *
+ * 設法：main ≈ 參考解 + 1～2 格餘裕，但要**小於手寫暴力解的長度**。
+ * 這樣「用迴圈」才會從加分項變成必需品。
+ *
+ * 以 ch3-10 為例：
+ *   用迴圈 → repeat 4 { walk } + light = 2 格   ✅ 塞得下
+ *   手寫   → walk × 4 + light          = 5 格   ❌ 塞不下 → 被迫學迴圈
+ */
+const LIMIT_PRESETS = Object.freeze({
+  // 第 1 章：只需要序列，給足餘裕讓孩子練習
+  'ch1-01': { main: 4, repeat: 3, depth: 2 },
+  'ch1-02': { main: 5, repeat: 3, depth: 2 },
+  'ch1-03': { main: 6, repeat: 3, depth: 2 },
+  'ch1-04': { main: 6, repeat: 3, depth: 2 },
+  'ch1-05': { main: 8, repeat: 3, depth: 2 },
+  // 第 2 章：加入跳躍
+  'ch2-06': { main: 5, repeat: 3, depth: 2 },
+  'ch2-07': { main: 6, repeat: 3, depth: 2 },
+  'ch2-08': { main: 7, repeat: 3, depth: 2 },
+  'ch2-09': { main: 7, repeat: 3, depth: 2 },
+  // 第 3 章：★ 刻意收緊，逼出迴圈
+  'ch3-10': { main: 4, repeat: 3, depth: 2 },   // 手寫 5 格塞不下
+  'ch3-11': { main: 5, repeat: 3, depth: 2 },   // 手寫 6 格塞不下
+});
+
+// 套用到每一關（找不到就給保守預設值）
+for (const def of LEVELS) {
+  def.limits = LIMIT_PRESETS[def.id] ?? { main: def.medals.bronze + 2, repeat: 3, depth: 2 };
+}
+
+/**
+ * 驗證單一關卡的資料合法性。
+ * @returns {string[]} 錯誤訊息（空陣列 = 通過）
+ */
+function validateLevel(def, { nestedRepeatAllowed = false } = {}) {
+  const errs = [];
+  const id = def.id ?? '(無 id)';
+
+  const size = def.size;
+  if (!size || !Number.isInteger(size.x) || !Number.isInteger(size.y)) {
+    errs.push(`[${id}] 缺少或格式錯誤的 size`);
+    return errs;
+  }
+  if (size.x <= 2 || size.y <= 2) {
+    errs.push(`[${id}] size 太小（${size.x}x${size.y}），外圍需要一圈牆`);
+  }
+
+  const lights = def.lights ?? [];
+  // ★ 強制規則 1
+  if (lights.length === 0) {
+    errs.push(`[${id}] 【致命】lights 是空的 → 勝利條件恆真，開場即過關`);
+  }
+  for (const c of lights) {
+    if (!Array.isArray(c) || c.length !== 2) {
+      errs.push(`[${id}] 燈泡座標格式錯誤：${JSON.stringify(c)}（應為 [x, y]）`);
+    } else if (c[0] < 0 || c[1] < 0 || c[0] >= size.x || c[1] >= size.y) {
+      errs.push(`[${id}] 燈泡座標 (${c[0]},${c[1]}) 超出地圖 ${size.x}x${size.y}`);
+    }
+  }
+
+  const st = def.start;
+  if (!st || !Number.isInteger(st.x) || !Number.isInteger(st.y)) {
+    errs.push(`[${id}] start 缺少 x/y`);
+  } else {
+    if (st.x < 0 || st.y < 0 || st.x >= size.x || st.y >= size.y) {
+      errs.push(`[${id}] 起始位置 (${st.x},${st.y}) 超出地圖`);
+    }
+    if (![0, 1, 2, 3].includes(st.facing)) {
+      errs.push(`[${id}] facing 必須是 0–3，收到 ${st.facing}`);
+    }
+  }
+
+  const allowed = def.allowed ?? [];
+  // ★ 強制規則 2
+  if (lights.length > 0 && !allowed.includes('light')) {
+    errs.push(`[${id}] 【致命】有燈泡但 allowed 不含 'light' → 這一關無解`);
+  }
+  if (allowed.length === 0) errs.push(`[${id}] allowed 是空的`);
+
+  for (const p of def.platform ?? []) {
+    if (!Array.isArray(p) || p.length !== 3) {
+      errs.push(`[${id}] platform 格式錯誤：${JSON.stringify(p)}（應為 [x, y, 高度]）`);
+    } else if (p[0] < 0 || p[1] < 0 || p[0] >= size.x || p[1] >= size.y) {
+      errs.push(`[${id}] platform 座標 (${p[0]},${p[1]}) 超出地圖`);
+    } else if (p[2] < 1) {
+      errs.push(`[${id}] platform 高度必須 >= 1，收到 ${p[2]}`);
+    }
+  }
+
+  if (def.heights) {
+    if (def.heights.length !== size.x) {
+      errs.push(`[${id}] heights 第一層長度 ${def.heights.length} != size.x ${size.x}`);
+    } else if (def.heights.some((r) => r.length !== size.y)) {
+      errs.push(`[${id}] heights 內層長度不一致（應為 ${size.y}）`);
+    }
+  }
+
+  const m = def.medals ?? {};
+  for (const k of ['gold', 'silver', 'bronze']) {
+    if (!Number.isInteger(m[k])) errs.push(`[${id}] medals 缺少或非整數的 ${k}`);
+  }
+  if (m.gold > m.silver || m.silver > m.bronze) {
+    errs.push(`[${id}] medals 門檻順序錯誤（應為 gold <= silver <= bronze）`);
+  }
+
+  if (!Array.isArray(def.solution) || def.solution.length === 0) {
+    errs.push(`[${id}] 缺少參考解 solution`);
+  }
+
+  // ── 格數限制的檢查（設錯會產生「不可能拿到金牌」或「不必動腦」的關卡）──
+  const lim = def.limits;
+  if (!lim || !Number.isInteger(lim.main) || lim.main < 1) {
+    errs.push(`[${id}] 缺少或格式錯誤的 limits.main`);
+  } else {
+    if (lim.main < def.solution.length) {
+      errs.push(
+        `[${id}] 【致命】limits.main ${lim.main} 小於參考解長度 ${def.solution.length}` +
+        ` → 這一關連參考解都放不進去`
+      );
+    }
+    if (def.medals && lim.main < def.medals.gold) {
+      errs.push(
+        `[${id}] 【致命】limits.main ${lim.main} 小於金牌門檻 ${def.medals.gold}` +
+        ` → 不可能拿到金牌`
+      );
+    }
+    if (Number.isInteger(lim.depth) && lim.depth < 1) {
+      errs.push(`[${id}] limits.depth 必須 >= 1`);
+    }
+    if (Number.isInteger(lim.repeat) && lim.repeat < 1) {
+      errs.push(`[${id}] limits.repeat 必須 >= 1`);
+    }
+  }
+
+  void nestedRepeatAllowed;
+  return errs;
+}
+
+/** 把關卡定義轉成 World 用的 tiles 二維陣列 */
+function buildTiles(def) {
+  const heights = def.heights
+    ? def.heights.map((r) => r.slice())
+    : boxHeights(def.size.x, def.size.y);
+
+  for (const [px, py, ph] of def.platform ?? []) {
+    heights[px][py] = ph;
+  }
+
+  const isLight = new Set((def.lights ?? []).map((c) => `${c[0]},${c[1]}`));
+  const tiles = [];
+  for (let x = 0; x < def.size.x; x++) {
+    const col = [];
+    for (let y = 0; y < def.size.y; y++) {
+      col.push({
+        h: heights[x][y],
+        isLight: isLight.has(`${x},${y}`),
+        lit: false,
+      });
+    }
+    tiles.push(col);
+  }
+  return tiles;
+}
+
+
+// ══════════ js/render.js ══════════
+/**
+ * render.js — 等角（isometric）渲染
+ *
+ * 分成兩層：
+ *   1. 純幾何函式（isoProject / columnPolygons / drawOrder / computeLayout）
+ *      → 不碰 Canvas，可以在 Node 裡單元測試
+ *   2. Renderer 類別
+ *      → 只負責把算好的多邊形畫到 2D context 上
+ *
+ * 座標系：
+ *   世界座標 (x, y, h)
+ *   h 是「高度」，資料從 1 起算（1 = 地板，2 = 高一階）
+ *   每個格子都是一根「柱子」，柱頂在高度 h，側面從 h 一路延伸到地面（高度 0）
+ */
+
+const METRICS = Object.freeze({
+  tileW: 64,    // 菱形寬
+  tileH: 32,    // 菱形高（2:1 等角）
+  blockH: 22,   // 每單位高度的側面高度
+});
+
+const THEME = Object.freeze({
+  background: '#243447',
+  floorTop: '#c3ced9',
+  floorX: '#7e8b9b',      // 右下側面（較暗）
+  floorY: '#98a5b3',      // 左下側面（中間）
+  goalUnlitTop: '#4a86e8',
+  goalUnlitX: '#2c5aa8',
+  goalUnlitY: '#3a6fc4',
+  goalLitTop: '#ffd95e',
+  goalLitX: '#c39a1f',
+  goalLitY: '#e0b833',
+  robotBody: '#f2f4f7',
+  robotShade: '#c3cad4',
+  robotAccent: '#e4572e',
+  gridLine: 'rgba(255,255,255,0.08)',
+  shadow: 'rgba(0,0,0,0.18)',
+});
+
+// ─────────────────────────────────────────────
+// 純幾何（可單元測試）
+// ─────────────────────────────────────────────
+
+/**
+ * 世界座標 → 螢幕座標（回傳柱頂菱形的中心點）
+ * @param {number} x @param {number} y @param {number} h
+ * @param {{x:number,y:number}} origin 柱 (0,0) 在高度 0 時的螢幕位置
+ */
+function isoProject(x, y, h, origin, metrics = METRICS) {
+  return {
+    sx: origin.x + (x - y) * (metrics.tileW / 2),
+    sy: origin.y + (x + y) * (metrics.tileH / 2) - h * metrics.blockH,
+  };
+}
+
+/**
+ * 一根柱子的三個面（回傳多邊形頂點陣列，順時針）
+ *   top     柱頂菱形
+ *   faceX   朝 +x 的側面（畫面上偏右下）
+ *   faceY   朝 +y 的側面（畫面上偏左下）
+ */
+function columnPolygons(x, y, h, origin, metrics = METRICS) {
+  const { tileW, tileH, blockH } = metrics;
+  const { sx, sy } = isoProject(x, y, h, origin, metrics);
+  const tw = tileW / 2;
+  const th = tileH / 2;
+  const side = blockH * h; // 側面高度：從柱頂一路到地面
+
+  const top = [sx, sy - th];
+  const right = [sx + tw, sy];
+  const bottom = [sx, sy + th];
+  const left = [sx - tw, sy];
+
+  return {
+    center: { sx, sy },
+    topPoly: [top, right, bottom, left],
+    // 朝 +y（左下）的側面：left → bottom 這條邊往下長
+    faceY: [left, bottom, [bottom[0], bottom[1] + side], [left[0], left[1] + side]],
+    // 朝 +x（右下）的側面：bottom → right 這條邊往下長
+    faceX: [bottom, right, [right[0], right[1] + side], [bottom[0], bottom[1] + side]],
+    sideHeight: side,
+  };
+}
+
+/**
+ * 繪製順序：由後往前（painter's algorithm）。
+ *
+ * 排序鍵 = x + y，由小到大。
+ *   x+y 越小 → 在畫面上越後面（越上面）→ 先畫
+ * 這就是原版的做法，也是本專案最容易做錯的一件事。
+ */
+function drawOrder(sizeX, sizeY) {
+  const out = [];
+  const maxSum = sizeX - 1 + sizeY - 1;
+  for (let s = 0; s <= maxSum; s++) {
+    for (let x = 0; x < sizeX; x++) {
+      const y = s - x;
+      if (y < 0 || y >= sizeY) continue;
+      out.push([x, y]);
+    }
+  }
+  return out;
+}
+
+/**
+ * 計算畫布尺寸與原點，讓整張地圖（含最高的柱子）剛好塞進 padding 內。
+ */
+function computeLayout(tiles, metrics = METRICS, padding = 24) {
+  const sizeX = tiles.length;
+  const sizeY = tiles[0].length;
+  let maxH = 1;
+  for (const col of tiles) for (const t of col) maxH = Math.max(maxH, t.h);
+
+  // 用暫定原點 (0,0) 先算所有極值，再平移
+  const zero = { x: 0, y: 0 };
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [x, y] of drawOrder(sizeX, sizeY)) {
+    const h = tiles[x][y].h;
+    const p = columnPolygons(x, y, h, zero, metrics);
+    for (const poly of [p.topPoly, p.faceX, p.faceY]) {
+      for (const [px, py] of poly) {
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+      }
+    }
+  }
+
+  const origin = { x: padding - minX, y: padding - minY };
+  return {
+    width: Math.ceil(maxX - minX + padding * 2),
+    height: Math.ceil(maxY - minY + padding * 2),
+    origin,
+    maxH,
+  };
+}
+
+/**
+ * 某個朝向在畫面上的方向向量（給機器人的箭頭用）。
+ * 注意：世界的 dx/dy 不能直接拿來當螢幕方向，要經過等角投影換算。
+ */
+function screenDelta(facing, metrics = METRICS) {
+  const world = { 0: [0, -1], 1: [1, 0], 2: [0, 1], 3: [-1, 0] }[facing];
+  const [dx, dy] = world;
+  return {
+    dx: (dx - dy) * (metrics.tileW / 2),
+    dy: (dx + dy) * (metrics.tileH / 2),
+  };
+}
+
+// ─────────────────────────────────────────────
+// Renderer（需要 Canvas 2D context）
+// ─────────────────────────────────────────────
+
+class Renderer {
+  /**
+   * @param {HTMLCanvasElement} canvas
+   * @param {{metrics?:object, theme?:object, padding?:number, showGrid?:boolean}} options
+   */
+  constructor(canvas, options = {}) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.metrics = options.metrics ?? METRICS;
+    this.theme = options.theme ?? THEME;
+    this.padding = options.padding ?? 24;
+    this.showGrid = options.showGrid ?? true;
+    this.layout = null;
+    this.dpr = 1;
+  }
+
+  /** 依世界大小與裝置像素比調整畫布尺寸 */
+  resize(tiles) {
+    this.layout = computeLayout(tiles, this.metrics, this.padding);
+    const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+    this.dpr = dpr;
+    this.canvas.width = Math.round(this.layout.width * dpr);
+    this.canvas.height = Math.round(this.layout.height * dpr);
+    this.canvas.style.width = `${this.layout.width}px`;
+    this.canvas.style.height = `${this.layout.height}px`;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  get origin() {
+    return this.layout.origin;
+  }
+
+  paintPolygon(points, fill) {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+
+  /** 畫一整張地圖 + 機器人 */
+  draw(world) {
+    const ctx = this.ctx;
+    const t = this.theme;
+    const tiles = world.tiles;
+
+    ctx.save();
+    ctx.fillStyle = t.background;
+    ctx.fillRect(0, 0, this.layout.width, this.layout.height);
+    ctx.restore();
+
+    for (const [x, y] of drawOrder(tiles.length, tiles[0].length)) {
+      this.drawColumn(x, y, tiles[x][y]);
+    }
+
+    this.drawRobot(world);
+  }
+
+  drawColumn(x, y, tile) {
+    const ctx = this.ctx;
+    const t = this.theme;
+    const p = columnPolygons(x, y, tile.h, this.origin, this.metrics);
+
+    let top, fx, fy;
+    if (!tile.isLight) {
+      top = t.floorTop; fx = t.floorX; fy = t.floorY;
+    } else if (tile.lit) {
+      top = t.goalLitTop; fx = t.goalLitX; fy = t.goalLitY;
+    } else {
+      top = t.goalUnlitTop; fx = t.goalUnlitX; fy = t.goalUnlitY;
+    }
+
+    // 後畫的蓋前面 → 順序：左下面、右下面、然後柱頂
+    this.paintPolygon(p.faceY, fy);
+    this.paintPolygon(p.faceX, fx);
+    this.paintPolygon(p.topPoly, top);
+
+    if (this.showGrid) {
+      ctx.save();
+      ctx.strokeStyle = t.gridLine;
+      ctx.lineWidth = 1;
+      this.paintPolygonStroke(p.topPoly);
+      ctx.restore();
+    }
+
+    // 已亮的燈泡加一圈光暈，讓小孩一眼看到
+    if (tile.isLight && tile.lit) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.ellipse(p.center.sx, p.center.sy, this.metrics.tileW * 0.42,
+        this.metrics.tileH * 0.42, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff6cc';
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  paintPolygonStroke(points) {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i][0], points[i][1]);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  /** 機器人：站在柱頂上的一顆小方塊 + 面向箭頭 */
+  drawRobot(world) {
+    const ctx = this.ctx;
+    const t = this.theme;
+    const m = this.metrics;
+    const tile = world.tiles[world.x][world.y];
+    const base = columnPolygons(world.x, world.y, tile.h, this.origin, m).center;
+
+    const tw = m.tileW / 2;
+    const th = m.tileH / 2;
+    const w = tw * 0.62;      // 機器人半寬
+    const hgt = m.blockH * 1.15; // 機身高度
+    const cx = base.sx;
+    const cy = base.sy - th * 0.35; // 稍微往上站一點，避免被柱頂蓋住
+
+    ctx.save();
+
+    // 落地陰影
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath();
+    ctx.ellipse(cx, base.sy + th * 0.1, w * 0.9, th * 0.5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#000';
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // 機身左側面
+    ctx.beginPath();
+    ctx.moveTo(cx - w, cy);
+    ctx.lineTo(cx, cy + th * 0.5);
+    ctx.lineTo(cx, cy + th * 0.5 + hgt);
+    ctx.lineTo(cx - w, cy + hgt);
+    ctx.closePath();
+    ctx.fillStyle = t.robotShade;
+    ctx.fill();
+
+    // 機身右側面
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + th * 0.5);
+    ctx.lineTo(cx + w, cy);
+    ctx.lineTo(cx + w, cy + hgt);
+    ctx.lineTo(cx, cy + th * 0.5 + hgt);
+    ctx.closePath();
+    ctx.fillStyle = t.robotBody;
+    ctx.fill();
+
+    // 機身頂面
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - th * 0.5);
+    ctx.lineTo(cx + w, cy);
+    ctx.lineTo(cx, cy + th * 0.5);
+    ctx.lineTo(cx - w, cy);
+    ctx.closePath();
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // 面向箭頭（換算成螢幕方向）
+    const dir = screenDelta(world.facing, m);
+    const len = Math.hypot(dir.dx, dir.dy) || 1;
+    const ux = dir.dx / len;
+    const uy = dir.dy / len;
+    const ex = cx + ux * (w * 1.25);
+    const ey = cy - th * 0.15 + uy * (w * 1.25);
+
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - ux * 15 - uy * 8, ey - uy * 15 + ux * 8);
+    ctx.lineTo(ex - ux * 15 + uy * 8, ey - uy * 15 - ux * 8);
+    ctx.closePath();
+    ctx.fillStyle = t.robotAccent;
+    ctx.fill();
+
+    ctx.restore();
+  }
+}
+
+
+// ══════════ js/editor.js ══════════
+/**
+ * editor.js — 程式編輯器 UI（DOM）
+ *
+ * 互動設計（依馬哥的決定）：
+ *   1. 點擊與拖放都支援
+ *      → 點擊：平板可靠（拖放在觸控裝置容易誤觸）
+ *      → 拖放：桌面順手
+ *   2. 固定格數：用關卡的 limits 決定，空格會顯示出來
+ *      → 格數用完時給「想想看能不能用重複」的提示，而不是冷冰冰的「不能加了」
+ *   3. 重複積木採原版做法：先放一個空的重複殼，再把積木放進去
+ *
+ * 這個模組只負責「畫」與「收事件」，所有規則都在 program.js（純函式、已測試）。
+ */
+
+
+const ICON = {
+  walk: '➜',
+  jump: '⤒',
+  light: '💡',
+  turnLeft: '↰',
+  turnRight: '↱',
+  repeat: '🔁',
+};
+
+class Editor {
+  /**
+   * @param {HTMLElement} root 編輯器容器
+   * @param {{onChange?:Function, onNotice?:Function}} hooks
+   */
+  constructor(root, hooks = {}) {
+    this.root = root;
+    this.onChange = hooks.onChange ?? (() => {});
+    this.onNotice = hooks.onNotice ?? (() => {});
+
+    this.program = emptyProgram();
+    this.limits = { ...DEFAULT_LIMITS };
+    this.allowed = [];
+    this.focusPath = [];        // 新積木要放進哪個容器（[] = 主程式）
+    this.executingPath = null;  // 目前執行到的積木（高亮用）
+    this.dragFrom = null;
+
+    this.buildSkeleton();
+    this.bindGlobal();
+    this.render();
+  }
+
+  // ── 骨架 ──────────────────────────────────────────
+  buildSkeleton() {
+    this.root.innerHTML = `
+      <div class="ed-palette">
+        <div class="ed-palette-label">指令積木（點一下放進程式）</div>
+        <div class="ed-palette-items"></div>
+      </div>
+      <div class="ed-focusbar" hidden>
+        <span class="ed-focus-text"></span>
+        <button type="button" class="ed-btn ed-focus-exit">回到主程式</button>
+      </div>
+      <div class="ed-program" tabindex="0"></div>
+      <div class="ed-hintline"></div>
+    `;
+    this.$paletteItems = this.root.querySelector('.ed-palette-items');
+    this.$focusBar = this.root.querySelector('.ed-focusbar');
+    this.$focusText = this.root.querySelector('.ed-focus-text');
+    this.$focusExit = this.root.querySelector('.ed-focus-exit');
+    this.$program = this.root.querySelector('.ed-program');
+    this.$hintline = this.root.querySelector('.ed-hintline');
+
+    this.$focusExit.addEventListener('click', () => this.setFocus([]));
+  }
+
+  bindGlobal() {
+    // 把程式區當成「主程式」的拖放區
+    this.$program.addEventListener('dragover', (e) => {
+      if (this.dragFrom === null) return;
+      e.preventDefault();
+      this.$program.classList.add('ed-dragover');
+    });
+    this.$program.addEventListener('dragleave', () => {
+      this.$program.classList.remove('ed-dragover');
+    });
+    this.$program.addEventListener('drop', (e) => {
+      this.$program.classList.remove('ed-dragover');
+      if (this.dragFrom === null) return;
+      e.preventDefault();
+      this.applyMove(this.dragFrom, [], this.program.length);
+      this.dragFrom = null;
+    });
+  }
+
+  // ── 對外 ──────────────────────────────────────────
+  setLevel(def) {
+    this.limits = { ...DEFAULT_LIMITS, ...(def.limits ?? {}) };
+    this.allowed = def.allowed ?? [];
+    this.program = emptyProgram();
+    this.focusPath = [];
+    this.executingPath = null;
+    this.render();
+    this.onChange(this.program);
+  }
+
+  getProgram() {
+    return this.program;
+  }
+
+  setProgram(program) {
+    this.program = program;
+    this.focusPath = [];
+    this.render();
+    this.onChange(this.program);
+  }
+
+  /** 把參考解載進來（示範用） */
+  loadProgram(program) {
+    this.setProgram(program.map((b) =>
+      b.name === 'repeat'
+        ? { name: 'repeat', counter: b.counter, body: b.body.map((x) => ({ ...x })) }
+        : { ...b }
+    ));
+  }
+
+  setExecutingPath(path) {
+    this.executingPath = path ?? null;
+    this.highlight();
+  }
+
+  clearProgram() {
+    this.program = emptyProgram();
+    this.focusPath = [];
+    this.render();
+    this.onChange(this.program);
+  }
+
+  // ── 繪製 ──────────────────────────────────────────
+  render() {
+    this.renderPalette();
+    this.renderProgram();
+    this.renderFocusBar();
+    this.applyRowStates();
+    this.renderHintLine();
+  }
+
+  renderPalette() {
+    const items = [...PALETTE.filter((n) => this.allowed.includes(n))];
+    if (this.allowed.includes('repeat')) items.push('repeat');
+
+    this.$paletteItems.innerHTML = items.map((name) => `
+      <button type="button" class="ed-pal" data-name="${name}">
+        <span class="ed-ic">${ICON[name] ?? ''}</span>
+        <span>${BLOCK_LABEL[name]}</span>
+      </button>
+    `).join('');
+
+    this.$paletteItems.querySelectorAll('.ed-pal').forEach((btn) => {
+      btn.addEventListener('click', () => this.addBlock(btn.dataset.name));
+    });
+  }
+
+  renderProgram() {
+    const rows = flattenProgram(this.program, this.limits);
+    this.$program.innerHTML = rows.map((row) => this.renderRow(row)).join('');
+
+    this.$program.querySelectorAll('[data-act]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const path = JSON.parse(el.dataset.path);
+        const act = el.dataset.act;
+        if (act === 'del') this.doRemove(path);
+        else if (act === 'up') this.doMoveWithin(path, -1);
+        else if (act === 'down') this.doMoveWithin(path, 1);
+        else if (act === 'inc') this.doCounter(path, 1);
+        else if (act === 'dec') this.doCounter(path, -1);
+        else if (act === 'wrap') this.doWrap(path);
+        else if (act === 'unwrap') this.doUnwrap(path);
+        else if (act === 'focus') this.setFocus(path);
+      });
+    });
+
+    // 拖放來源
+    this.$program.querySelectorAll('[draggable="true"]').forEach((el) => {
+      el.addEventListener('dragstart', (e) => {
+        this.dragFrom = JSON.parse(el.dataset.dropPath ?? el.dataset.ownerPath);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', JSON.stringify(this.dragFrom));
+        el.classList.add('ed-dragging');
+      });
+      el.addEventListener('dragend', () => {
+        el.classList.remove('ed-dragging');
+        this.dragFrom = null;
+        this.$program.querySelectorAll('.ed-dropok').forEach((n) => n.classList.remove('ed-dropok'));
+      });
+    });
+
+    // 拖放目標
+    this.$program.querySelectorAll('.ed-row').forEach((el) => {
+      el.addEventListener('dragover', (e) => {
+        if (this.dragFrom === null) return;
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.add('ed-dropok');
+      });
+      el.addEventListener('dragleave', () => el.classList.remove('ed-dropok'));
+      el.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.remove('ed-dropok');
+        if (this.dragFrom === null) return;
+        const target = this.dropTargetFor(el);
+        if (target) this.applyMove(this.dragFrom, target.parentPath, target.index);
+        this.dragFrom = null;
+      });
+    });
+
+    // 點空白處 = 把焦點設回主程式
+    this.$program.addEventListener('click', (e) => {
+      if (e.target === this.$program) this.setFocus([]);
+    });
+  }
+
+  renderRow(row) {
+    const pad = `style="--depth:${row.depth}"`;
+    const focusCls = this.isFocused(row) ? ' ed-focused' : '';
+
+    if (row.kind === 'repeat-open') {
+      const b = row.block;
+      return `
+        <div class="ed-row ed-row-repeat${focusCls}" ${pad}
+             data-kind="repeat-open" data-owner-path='${JSON.stringify(row.path)}'
+             data-depth="${row.depth}" draggable="true">
+          <span class="ed-grip">⠿</span>
+          <span class="ed-ic">${ICON.repeat}</span>
+          <span class="ed-label">重複</span>
+          <button type="button" class="ed-btn ed-step" data-act="dec" data-path='${JSON.stringify(row.path)}'>−</button>
+          <span class="ed-count">${b.counter}</span>
+          <button type="button" class="ed-btn ed-step" data-act="inc" data-path='${JSON.stringify(row.path)}'>＋</button>
+          <span class="ed-times">次</span>
+          <button type="button" class="ed-btn" data-act="unwrap" data-path='${JSON.stringify(row.path)}' title="拆開">拆</button>
+          <button type="button" class="ed-btn ed-danger" data-act="del" data-path='${JSON.stringify(row.path)}' title="刪除">✕</button>
+          <button type="button" class="ed-btn ed-enter" data-act="focus" data-path='${JSON.stringify(row.path)}'>進入 ▾</button>
+        </div>`;
+    }
+
+    if (row.kind === 'repeat-close') {
+      return `<div class="ed-row ed-row-close" ${pad} data-kind="repeat-close"
+                   data-owner-path='${JSON.stringify(row.path)}' data-depth="${row.depth}">
+                <span class="ed-brace">}</span>
+              </div>`;
+    }
+
+    if (row.kind === 'empty') {
+      return `<div class="ed-row ed-row-empty" ${pad} data-kind="empty"
+                   data-parent-path='${JSON.stringify(row.parentPath)}' data-depth="${row.depth}">
+                <span class="ed-empty-dash">· · ·</span>
+              </div>`;
+    }
+
+    // 一般積木
+    const name = row.block.name;
+    return `
+      <div class="ed-row ed-row-block${focusCls}" ${pad} data-kind="block"
+           data-owner-path='${JSON.stringify(row.path)}' data-depth="${row.depth}" draggable="true">
+        <span class="ed-grip">⠿</span>
+        <span class="ed-ic">${ICON[name] ?? ''}</span>
+        <span class="ed-label">${BLOCK_LABEL[name] ?? name}</span>
+        <button type="button" class="ed-btn ed-sm" data-act="up" data-path='${JSON.stringify(row.path)}' title="上移">↑</button>
+        <button type="button" class="ed-btn ed-sm" data-act="down" data-path='${JSON.stringify(row.path)}' title="下移">↓</button>
+        <button type="button" class="ed-btn ed-sm" data-act="wrap" data-path='${JSON.stringify(row.path)}' title="包成重複">包</button>
+        <button type="button" class="ed-btn ed-sm ed-danger" data-act="del" data-path='${JSON.stringify(row.path)}' title="刪除">✕</button>
+      </div>`;
+  }
+
+  renderFocusBar() {
+    const inRepeat = this.focusPath.length > 0;
+    this.$focusBar.hidden = !inRepeat;
+    if (inRepeat) {
+      this.$focusText.textContent = '新積木會放進「重複」裡面';
+    }
+  }
+
+  renderHintLine() {
+    const problems = checkLimits(this.program, this.limits);
+    if (problems.length === 0) {
+      this.$hintline.textContent = '';
+      this.$hintline.className = 'ed-hintline';
+      return;
+    }
+    this.$hintline.textContent = problems[0].msg;
+    this.$hintline.className = 'ed-hintline ed-hintline-warn';
+  }
+
+  /** 高亮：目前執行的積木 / 目前編輯的容器 */
+  applyRowStates() {
+    const rows = flattenProgram(this.program, this.limits);
+    const nodes = [...this.$program.querySelectorAll('.ed-row')];
+    nodes.forEach((el) => el.classList.remove('ed-exec', 'ed-focus-target'));
+
+    if (this.executingPath) {
+      const idx = rowIndexForPath(rows, this.executingPath);
+      if (idx >= 0 && nodes[idx]) nodes[idx].classList.add('ed-exec');
+    }
+    if (this.focusPath.length > 0) {
+      const openIdx = rows.findIndex(
+        (r) => r.kind === 'repeat-open' && r.path.join('.') === this.focusPath.join('.')
+      );
+      if (openIdx >= 0 && nodes[openIdx]) nodes[openIdx].classList.add('ed-focus-target');
+    }
+  }
+
+  highlight() {
+    this.applyRowStates();
+    const el = this.$program.querySelector('.ed-exec');
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+  }
+
+  // ── 判斷輔助 ──────────────────────────────────────
+  isFocused(row) {
+    if (row.kind !== 'repeat-open') return false;
+    return row.path.join('.') === this.focusPath.join('.');
+  }
+
+  /** 拖放到某一列時，算出要放進哪個容器、第幾個位置 */
+  dropTargetFor(el) {
+    const kind = el.dataset.kind;
+    if (kind === 'empty') {
+      const parentPath = JSON.parse(el.dataset.parentPath);
+      return { parentPath, index: getListLength(this.program, parentPath) };
+    }
+    if (kind === 'repeat-open' || kind === 'repeat-close') {
+      const p = JSON.parse(el.dataset.ownerPath);
+      return { parentPath: p, index: getListLength(this.program, p) };
+    }
+    if (kind === 'block') {
+      const p = JSON.parse(el.dataset.ownerPath);
+      return { parentPath: p.slice(0, -1), index: p[p.length - 1] };
+    }
+    return null;
+  }
+
+  // ── 操作 ──────────────────────────────────────────
+  addBlock(name) {
+    const check = canInsert(this.program, this.focusPath, name === 'repeat', this.limits);
+    if (!check.ok) {
+      this.notice(check.reason, check.hint);
+      return;
+    }
+    const insertIndex = getListLength(this.program, this.focusPath);
+    const block = name === 'repeat'
+      ? { name: 'repeat', counter: 2, body: [] }
+      : { name };
+    this.commit(appendBlock(this.program, this.focusPath, block));
+    // 放進重複殼之後，焦點自動移進去，這樣孩子接著點就會放到裡面
+    if (name === 'repeat') {
+      this.setFocus([...this.focusPath, insertIndex]);
+    }
+  }
+
+  doRemove(path) {
+    if (path.join('.') === this.focusPath.join('.')) this.focusPath = [];
+    this.commit(removeAt(this.program, path));
+  }
+
+  doMoveWithin(path, delta) {
+    const parent = path.slice(0, -1);
+    const i = path[path.length - 1];
+    this.applyMove(path, parent, i + delta);
+  }
+
+  doCounter(path, delta) {
+    const target = pathToBlock(this.program, path);
+    if (!target || target.name !== 'repeat') return;
+    this.commit(setCounter(this.program, path, target.counter + delta));
+  }
+
+  doWrap(path) {
+    const r = wrapInRepeat(this.program, path, 2, this.limits);
+    if (!r.ok) { this.notice(r.reason); return; }
+    this.commit(r.program);
+  }
+
+  doUnwrap(path) {
+    const r = unwrapRepeat(this.program, path);
+    if (!r.ok) { this.notice(r.reason); return; }
+    if (path.join('.') === this.focusPath.join('.')) this.focusPath = [];
+    this.commit(r.program);
+  }
+
+  applyMove(fromPath, toParentPath, toIndex) {
+    const r = moveTo(this.program, fromPath, toParentPath, toIndex, this.limits);
+    if (!r.ok) { this.notice(r.reason); return; }
+    this.commit(r.program);
+  }
+
+  setFocus(path) {
+    this.focusPath = path;
+    this.render();
+  }
+
+  /** 所有異動的唯一出口：更新狀態 → 重畫 → 通知外面 */
+  commit(program) {
+    this.program = program;
+    this.render();
+    this.onChange(this.program);
+  }
+
+  notice(reason, hint) {
+    this.$hintline.textContent = hint ? `${reason}。${hint}` : reason;
+    this.$hintline.className = 'ed-hintline ed-hintline-warn';
+    this.onNotice(reason, hint);
+  }
+
+  /** 給外面顯示統計用 */
+  stats() {
+    return {
+      medalCost: medalCost(this.program),
+      totalBlocks: countAllBlocks(this.program),
+      problems: checkLimits(this.program, this.limits),
+    };
+  }
+}
+
+// ── 小工具 ────────────────────────────────────────
+function pathToBlock(program, path) {
+  let list = program;
+  for (let i = 0; i < path.length; i++) {
+    const node = list[path[i]];
+    if (!node) return null;
+    if (i === path.length - 1) return node;
+    if (node.name !== 'repeat') return null;
+    list = node.body;
+  }
+  return null;
+}
+
+function getListLength(program, parentPath) {
+  let list = program;
+  for (const idx of parentPath) {
+    const node = list[idx];
+    if (!node || node.name !== 'repeat') return 0;
+    list = node.body;
+  }
+  return list.length;
+}
+
+
+// ══════════ js/main.js ══════════
+/**
+ * main.js — M3 組裝：引擎 + 等角渲染 + 程式編輯器
+ *
+ * 互動：
+ *   ▶ 執行    把編輯器裡的程式跑起來（含動畫與「目前執行到哪個積木」的高亮）
+ *   ⏭ 單步    一次執行一個動作（教學價值最高的功能）
+ *   ↻ 重來    回到起始狀態，程式保留
+ *   💡 看解答  把關卡的參考解載進編輯器（不是直接給答案，是給對照）
+ *
+ * 拖放重排完成後，這裡只負責把程式交給引擎，不需要知道編輯器內部怎麼運作。
+ */
+
+
+// ── 啟動自我檢查：壞關卡不要進到畫面 ──────────────
+const levelProblems = [];
+LEVELS.forEach((def) => {
+  const errs = validateLevel(def);
+  if (errs.length) levelProblems.push(`${def.id}: ${errs.join('；')}`);
+});
+if (levelProblems.length) console.error('關卡資料有問題：\n' + levelProblems.join('\n'));
+
+// ── DOM ────────────────────────────────────────────
+const canvas = document.getElementById('board');
+const selLevel = document.getElementById('level');
+const elHint = document.getElementById('hint');
+const elStatus = document.getElementById('status');
+const elStats = document.getElementById('stats');
+const btnRun = document.getElementById('run');
+const btnStep = document.getElementById('stepbtn');
+const btnReset = document.getElementById('reset');
+const btnClear = document.getElementById('clearbtn');
+const btnAns = document.getElementById('showans');
+
+// ── 狀態 ───────────────────────────────────────────
+const renderer = new Renderer(canvas);
+let level = null;
+let world = null;
+let interp = null;
+let timer = null;
+const SPEED_MS = 300;
+
+let editor = null;
+
+// ── 關卡選擇 ───────────────────────────────────────
+LEVELS.forEach((def, i) => {
+  const o = document.createElement('option');
+  o.value = String(i);
+  o.textContent = `${def.id}　${def.title}`;
+  selLevel.appendChild(o);
+});
+
+// ── 編輯器 ─────────────────────────────────────────
+editor = new Editor(document.getElementById('editor'), {
+  onChange: () => {
+    interp.load(editor.getProgram());
+    interp.reset();
+    renderer.draw(world);
+    setStatus('', '');
+    updateStats();
+  },
+  onNotice: () => {},
+});
+
+// ── 載入關卡 ───────────────────────────────────────
+function stopTimer() {
+  if (timer !== null) { clearTimeout(timer); timer = null; }
+  btnRun.textContent = '▶ 執行';
+}
+
+function loadLevel(index) {
+  stopTimer();
+  level = LEVELS[index];
+  selLevel.value = String(index);
+
+  world = new World(buildTiles(level), level.start);
+  interp = new Interpreter(world);
+
+  renderer.resize(world.tiles);
+  renderer.draw(world);
+
+  elHint.textContent = level.hint ?? '';
+  editor.setLevel(level);
+  interp.load(editor.getProgram());
+
+  setStatus('', '');
+  btnRun.disabled = false;
+  btnStep.disabled = false;
+  updateStats();
+}
+
+// ── 顯示 ───────────────────────────────────────────
+function setStatus(text, cls) {
+  elStatus.textContent = text;
+  elStatus.className = cls ?? '';
+}
+
+function updateStats() {
+  if (!interp || !level) return;
+  const s = editor.stats();
+  const m = level.medals;
+  const n = s.medalCost;
+  const medal = interp.medal(m);
+  const icon = { gold: '🥇', silver: '🥈', bronze: '🥉' }[medal] ?? '—';
+
+  const over = s.problems.length > 0;
+  elStats.innerHTML = [
+    `積木：<b>${n}</b> / ${level.limits.main}　` +
+      `<span class="${over ? 'over' : ''}">（金 ${m.gold}／銀 ${m.silver}／銅 ${m.bronze}）</span>`,
+    `已執行：<b>${interp.executedSteps}</b> 步　獎牌：<span style="font-size:17px">${icon}</span>`,
+    s.problems.length ? `<span class="over">⚠️ ${s.problems[0].msg}</span>` : '',
+  ].filter(Boolean).join('<br>');
+}
+
+/** 執行前先檢查：格數與指令合法性 */
+function preflight() {
+  const program = editor.getProgram();
+  if (program.length === 0) {
+    setStatus('先放幾個積木吧', 's-bad');
+    return null;
+  }
+  const probs = checkLimits(program, level.limits);
+  if (probs.length) {
+    setStatus(`⚠️ ${probs[0].msg}`, 's-bad');
+    return null;
+  }
+  const errs = validateProgram(program, level.allowed, true);
+  if (errs.length) {
+    setStatus(`⚠️ ${errs[0]}`, 's-bad');
+    return null;
+  }
+  return program;
+}
+
+// ── 執行 ───────────────────────────────────────────
+function startRun() {
+  stopTimer();
+  const program = preflight();
+  if (!program) return;
+
+  interp.load(program);
+  interp.reset();
+  renderer.draw(world);
+  editor.setExecutingPath(null);
+  setStatus('執行中…', 's-run');
+  btnRun.textContent = '⏸ 停止';
+
+  const tick = () => {
+    const rec = interp.step();
+    if (rec === null) { finish(); return; }
+    renderer.draw(world);
+    editor.setExecutingPath(rec.path);
+    updateStats();
+    setStatus(`執行中… ${rec.action}`, 's-run');
+    timer = setTimeout(tick, SPEED_MS);
+  };
+  timer = setTimeout(tick, SPEED_MS);
+}
+
+function doStep() {
+  stopTimer();
+  if (interp.status !== STATUS.RUNNING) {
+    const program = preflight();
+    if (!program) return;
+    interp.load(program);
+    interp.reset();
+    renderer.draw(world);
+  }
+  const rec = interp.step();
+  renderer.draw(world);
+  if (rec === null) { finish(); return; }
+  editor.setExecutingPath(rec.path);
+  updateStats();
+  setStatus(`單步：${rec.action}${rec.moved === false ? '（沒有動作）' : ''}`, 's-run');
+}
+
+function finish() {
+  stopTimer();
+  updateStats();
+  const msgs = {
+    [STATUS.WON]: ['🎉 過關！', 's-won'],
+    [STATUS.EXHAUSTED]: ['程式跑完了，但還有燈沒亮', 's-bad'],
+    [STATUS.STUCK]: ['執行步數太多，中止了', 's-bad'],
+  };
+  const [text, cls] = msgs[interp.status] ?? ['結束', ''];
+  setStatus(text, cls);
+
+  if (interp.status === STATUS.WON) {
+    const medal = interp.medal(level.medals);
+    if (medal) {
+      const label = { gold: '金牌', silver: '銀牌', bronze: '銅牌' }[medal];
+      setStatus(`🎉 過關！拿到${label}（用了 ${interp.totalInstructions} 個積木）`, 's-won');
+    }
+  }
+}
+
+function resetWorld() {
+  stopTimer();
+  interp.load(editor.getProgram());
+  interp.reset();
+  renderer.draw(world);
+  editor.setExecutingPath(null);
+  setStatus('', '');
+  updateStats();
+}
+
+// ── 事件 ───────────────────────────────────────────
+btnRun.addEventListener('click', () => {
+  if (timer !== null) { stopTimer(); setStatus('已停止', ''); return; }
+  startRun();
+});
+btnStep.addEventListener('click', doStep);
+btnReset.addEventListener('click', resetWorld);
+btnClear.addEventListener('click', () => {
+  stopTimer();
+  editor.clearProgram();
+  interp.reset();
+  renderer.draw(world);
+  editor.setExecutingPath(null);
+  setStatus('', '');
+  updateStats();
+});
+btnAns.addEventListener('click', () => {
+  stopTimer();
+  editor.loadProgram(level.solution);
+  interp.load(editor.getProgram());
+  interp.reset();
+  renderer.draw(world);
+  editor.setExecutingPath(null);
+  setStatus('已載入參考解，按「執行」看看它怎麼跑', '');
+  updateStats();
+});
+
+selLevel.addEventListener('change', (e) => loadLevel(Number(e.target.value)));
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'SELECT') return;
+  if (e.key === ' ') {
+    e.preventDefault();
+    if (timer !== null) { stopTimer(); setStatus('已停止', ''); }
+    else startRun();
+  } else if (e.key === 'n' || e.key === 'N') {
+    doStep();
+  } else if (e.key === 'r' || e.key === 'R') {
+    resetWorld();
+  } else if (e.key === 'ArrowRight') {
+    loadLevel((LEVELS.indexOf(level) + 1) % LEVELS.length);
+  } else if (e.key === 'ArrowLeft') {
+    loadLevel((LEVELS.indexOf(level) - 1 + LEVELS.length) % LEVELS.length);
+  }
+});
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (!world) return;
+    renderer.resize(world.tiles);
+    renderer.draw(world);
+  }, 120);
+});
+
+// 開發用
+window.__game = {
+  get world() { return world; },
+  get interp() { return interp; },
+  get editor() { return editor; },
+  LEVELS, World, Interpreter,
+  loadLevel,
+};
+
+loadLevel(0);
+
+})();
+</script>
+</body>
+</html>
