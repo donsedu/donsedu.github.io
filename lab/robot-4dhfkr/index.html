@@ -219,7 +219,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/editor.js, js/main.js
-   建置：2026-09-16T16:02:40.079Z
+   建置：2026-09-16T16:11:33.341Z
 */
 (function () {
 'use strict';
@@ -762,6 +762,17 @@ function nestingDepth(program, level = 1) {
  * 檢查所有限制，回傳問題清單（空陣列 = 通過）。
  * 限制是關卡設計工具：格數要設得「剛好逼出預期的解法」。
  */
+/**
+ * 「重複」可以疊幾層。
+ *
+ * ⚠️ limits.depth 是**含主程式那一層**的總深度（main=1），
+ * 所以可以疊的重複層數是 depth - 1。
+ * 直接把 depth 講成「層數」會誤導使用者（孩子會以為可以疊 3 層）。
+ */
+function maxRepeatLayers(limits = DEFAULT_LIMITS) {
+  return Math.max(1, (limits?.depth ?? DEFAULT_LIMITS.depth) - 1);
+}
+
 function checkLimits(program, limits = DEFAULT_LIMITS) {
   const L = { ...DEFAULT_LIMITS, ...limits };
   const problems = [];
@@ -774,7 +785,7 @@ function checkLimits(program, limits = DEFAULT_LIMITS) {
     if (depth > L.depth) {
       problems.push({
         where: parentPath, kind: 'too_deep',
-        msg: `「重複」最多只能疊 ${L.depth} 層`,
+        msg: `「重複」最多只能疊 ${maxRepeatLayers(L)} 層`,
       });
     }
     list.forEach((b, i) => {
@@ -818,7 +829,7 @@ function canInsert(program, parentPath, isRepeatBlock, limits = DEFAULT_LIMITS) 
     if (depthHere + 1 > L.depth) {
       return {
         ok: false,
-        reason: `「重複」最多只能疊 ${L.depth} 層`,
+        reason: `「重複」最多只能疊 ${maxRepeatLayers(L)} 層`,
         hint: '把裡面那層的重複拿掉試試看。',
       };
     }
@@ -973,7 +984,7 @@ function wrapInRepeat(program, path, counter = 2, limits = DEFAULT_LIMITS) {
   const parentPath = path.slice(0, -1);
   const depthHere = parentPath.length === 0 ? 1 : parentPath.length + 1;
   if (depthHere + 1 > (limits.depth ?? DEFAULT_LIMITS.depth)) {
-    return { ok: false, reason: `「重複」最多只能疊 ${limits.depth} 層`, program };
+    return { ok: false, reason: `「重複」最多只能疊 ${maxRepeatLayers(limits)} 層`, program };
   }
 
   const next = cloneProgram(program);
@@ -1235,6 +1246,58 @@ const LEVELS = [
     medals: { gold: 4, silver: 6, bronze: 9 },
     solution: [R(2, W(1)), TR, R(2, W(1)), LIGHT],
   },
+
+  // ═══════════ 第 4 章：巢狀迴圈 ═══════════
+  //
+  // ★ 這一章的設計核心：用 limits.repeat 逼出巢狀。
+  //
+  //   以 ch4-12 為例（正方形，每格都要亮）：
+  //     巢狀解  repeat 4 { repeat 2 { walk, light }, turnRight }
+  //             → 外圈本體 2 格、內圈本體 2 格 → repeat=2 剛好塞得下 ✅
+  //     不巢狀  repeat 4 { walk, light, walk, light, turnRight }
+  //             → 外圈本體 5 格 → repeat=2 塞不下 ❌
+  //
+  //   格子數限制本身就是這一章的教學工具：
+  //   不是叫他去想巢狀，而是**不巢狀就寫不出來**。
+  //
+  //   ⚠️ depth 必須 >= 3。depth=2 的話 canInsert 會擋掉「重複裡再放重複」，
+  //   孩子會卡在「想得到卻放不進去」，比不會寫更挫折。
+  {
+    id: 'ch4-12',
+    chapter: 'nested',
+    title: '轉一圈，每格都亮',
+    hint: '繞一圈，走過的每一格都要點燈。裡面那一圈在重複，外面那一圈也在重複。',
+    size: STD,
+    lights: [[4, 3], [5, 3], [5, 4], [5, 5], [4, 5], [3, 5], [3, 4], [3, 3]],
+    start: { x: 3, y: 3, facing: 1 },
+    allowed: ['walk', 'light', 'turnRight', 'repeat'],
+    medals: { gold: 1, silver: 2, bronze: 3 },
+    solution: [R(4, [R(2, [...W(1), LIGHT]), TR])],
+  },
+  {
+    id: 'ch4-13',
+    chapter: 'nested',
+    title: '轉角才點燈',
+    hint: '走三步才轉一次彎，只點四個角落。想想看，哪一件事在重複？',
+    size: STD,
+    lights: [[5, 2], [5, 5], [2, 5], [2, 2]],
+    start: { x: 2, y: 2, facing: 1 },
+    allowed: ['walk', 'light', 'turnRight', 'repeat'],
+    medals: { gold: 1, silver: 2, bronze: 3 },
+    solution: [R(4, [R(3, W(1)), LIGHT, TR])],
+  },
+  {
+    id: 'ch4-14',
+    chapter: 'nested',
+    title: '長長的兩邊',
+    hint: '這次不是正方形。兩個邊比較長、兩個邊比較短 —— 外面那一圈做兩次就好。',
+    size: STD,
+    lights: [[3, 2], [4, 2], [4, 3], [4, 4], [4, 5], [3, 5], [2, 5], [2, 4], [2, 3], [2, 2]],
+    start: { x: 2, y: 2, facing: 1 },
+    allowed: ['walk', 'light', 'turnRight', 'repeat'],
+    medals: { gold: 1, silver: 2, bronze: 3 },
+    solution: [R(2, [R(2, [...W(1), LIGHT]), TR, R(3, [...W(1), LIGHT]), TR])],
+  },
 ];
 
 /**
@@ -1262,6 +1325,13 @@ const LIMIT_PRESETS = Object.freeze({
   // 第 3 章：★ 刻意收緊，逼出迴圈
   'ch3-10': { main: 4, repeat: 3, depth: 2 },   // 手寫 5 格塞不下
   'ch3-11': { main: 5, repeat: 3, depth: 2 },   // 手寫 6 格塞不下
+
+  // 第 4 章：★ depth 一定要 3（不然「重複裡再放重複」會被 canInsert 擋掉）
+  //          repeat 刻意收緊 —— 不收緊的話孩子會用「一層迴圈塞很多動作」繞過去，
+  //          就學不到巢狀了。
+  'ch4-12': { main: 3, repeat: 2, depth: 3 },   // 外圈 2 格、內圈 2 格
+  'ch4-13': { main: 3, repeat: 3, depth: 3 },   // 外圈 3 格（內圈 + 點燈 + 轉彎）
+  'ch4-14': { main: 3, repeat: 4, depth: 3 },   // 外圈 4 格（兩個不同長度的內圈）
 });
 
 // 套用到每一關（找不到就給保守預設值）
@@ -1273,7 +1343,7 @@ for (const def of LEVELS) {
  * 驗證單一關卡的資料合法性。
  * @returns {string[]} 錯誤訊息（空陣列 = 通過）
  */
-function validateLevel(def, { nestedRepeatAllowed = false } = {}) {
+function validateLevel(def) {
   const errs = [];
   const id = def.id ?? '(無 id)';
 
@@ -1373,7 +1443,17 @@ function validateLevel(def, { nestedRepeatAllowed = false } = {}) {
     }
   }
 
-  void nestedRepeatAllowed;
+  // ★ 參考解的巢狀深度 vs limits.depth 必須一致。
+  //   寫巢狀關卡時很容易只改 solution、忘了把 depth 從 2 改成 3 ——
+  //   那會做出「連參考解都放不進去」的關卡，而且玩到那一關才會發現。
+  const solDepth = nestingDepth(def.solution ?? []);
+  if (solDepth >= 3 && Number.isInteger(lim?.depth) && lim.depth < solDepth) {
+    errs.push(
+      `[${id}] 【致命】參考解的巢狀深度是 ${solDepth}，但 limits.depth 只有 ${lim.depth}` +
+      ` → 參考解放不進去（第 4 章請設 depth: 3）`
+    );
+  }
+
   return errs;
 }
 
@@ -2587,6 +2667,22 @@ function startRun() {
 
 function doStep() {
   stopTimer();
+
+  // ★ 已經有結果了 → 再按一次「單步」是把結果顯示出來，**不要重新開始**。
+  //
+  // 為什麼不能只用 `status !== RUNNING` 判斷：
+  //   引擎刻意「不等程式跑完」——世界一達成過關，status 立刻變 won，
+  //   剩下的指令不執行（step() 會直接回 null）。
+  //   如果照舊重新開始，老師帶學生一步步走完之後，
+  //   過關訊息永遠不會出現 —— 而單步正是這個教具最有價值的功能
+  //   （讓學生看見「程式跑到哪一行」）。
+  if (interp.status === STATUS.WON ||
+      interp.status === STATUS.EXHAUSTED ||
+      interp.status === STATUS.STUCK) {
+    finish();
+    return;
+  }
+
   if (interp.status !== STATUS.RUNNING) {
     const program = preflight();
     if (!program) return;
