@@ -69,6 +69,19 @@
   button.ctl.ghost { background: var(--panel-2); color: var(--text); border-color: var(--line); }
   button.ctl:hover { filter: brightness(1.08); }
   button.ctl:disabled { opacity: .45; cursor: not-allowed; }
+  /* 「下一關」：過關後變成主按鈕並呼吸提示 */
+  button.ctl.primary { background: var(--ok); color: #0e2318; border-color: var(--ok); }
+  button.ctl.primary.is-ready { animation: npulse 1.5s ease-in-out infinite; }
+  @keyframes npulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(87, 199, 133, .55); }
+    50%      { box-shadow: 0 0 0 9px rgba(87, 199, 133, 0); }
+  }
+  /* 執行結果也顯示在按鈕旁邊 —— 手機版按完「執行」時，
+     畫面頂端的狀態列已經被捲出畫面了，看不到結果 */
+  #result { font-size: 13.5px; line-height: 1.7; min-height: 22px; color: var(--muted); }
+  #result.s-won { color: var(--ok); font-weight: 700; }
+  #result.s-bad { color: #ff8f8f; }
+  #result.s-run { color: var(--accent-2); }
 
   /* ── 編輯器 ── */
   .ed-palette-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
@@ -137,6 +150,12 @@
   @media (max-width: 940px) {
     #app { flex-direction: column; height: auto; }
     #side { flex: 1 1 auto; width: 100%; max-height: none; }
+    /* 手機版：關卡選單黏在畫面頂端，
+       程式編輯器在下面時也還看得到自己在第幾關 */
+    #topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--bg); padding: 8px 0; margin: -8px 0;
+    }
   }
 </style>
 </head>
@@ -165,7 +184,11 @@
         <button class="ctl ghost" id="stepbtn">⏭ 單步</button>
         <button class="ctl ghost" id="reset">↻ 重來</button>
       </div>
+
+      <div id="result"></div>
+
       <div class="controls">
+        <button class="ctl primary" id="nextbtn">下一關 ▶</button>
         <button class="ctl ghost" id="clearbtn">清空程式</button>
         <button class="ctl ghost" id="showans">💡 看解答</button>
       </div>
@@ -179,7 +202,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/editor.js, js/main.js
-   建置：2026-09-16T10:03:23.890Z
+   建置：2026-09-16T12:59:11.793Z
 */
 (function () {
 'use strict';
@@ -2176,6 +2199,8 @@ const btnStep = document.getElementById('stepbtn');
 const btnReset = document.getElementById('reset');
 const btnClear = document.getElementById('clearbtn');
 const btnAns = document.getElementById('showans');
+const btnNext = document.getElementById('nextbtn');
+const elResult = document.getElementById('result');
 
 // ── 狀態 ───────────────────────────────────────────
 const renderer = new Renderer(canvas);
@@ -2186,6 +2211,8 @@ let timer = null;
 const SPEED_MS = 300;
 
 let editor = null;
+let curIndex = 0;
+let solved = false;
 
 // ── 關卡選擇 ───────────────────────────────────────
 LEVELS.forEach((def, i) => {
@@ -2215,8 +2242,10 @@ function stopTimer() {
 
 function loadLevel(index) {
   stopTimer();
+  curIndex = index;
   level = LEVELS[index];
   selLevel.value = String(index);
+  setSolved(false);
 
   world = new World(buildTiles(level), level.start);
   interp = new Interpreter(world);
@@ -2236,12 +2265,45 @@ function loadLevel(index) {
 
 // ── 顯示 ───────────────────────────────────────────
 function setStatus(text, cls) {
+  // 寫兩處：頂端狀態列（桌機看得到）+ 按鈕旁結果列（手機看得到，因為
+  // 手機按「執行」時畫面頂端已經捲出視野了）
   elStatus.textContent = text;
   elStatus.className = cls ?? '';
+  elResult.textContent = text;
+  elResult.className = cls ?? '';
+}
+
+// ── 過關狀態與「下一關」─────────────────────────────
+function setSolved(v) {
+  solved = v;
+  btnNext.classList.toggle('is-ready', v);
+  updateNextLabel();
+}
+
+function updateNextLabel() {
+  const isLast = curIndex >= LEVELS.length - 1;
+  if (isLast) btnNext.textContent = solved ? '🏆 全部完成' : '🏆 最後一關';
+  else btnNext.textContent = '下一關 ▶';
+}
+
+function gotoNextLevel() {
+  if (!solved) {
+    setStatus('先把這一關的燈都點亮，就能去下一關囉', 's-run');
+    return;
+  }
+  if (curIndex >= LEVELS.length - 1) {
+    setStatus(`🏆 恭喜！你已經完成全部 ${LEVELS.length} 關！`, 's-won');
+    return;
+  }
+  loadLevel(curIndex + 1);
+  setStatus('', '');
 }
 
 function updateStats() {
   if (!interp || !level) return;
+  // 過關狀態也在這裡同步 —— updateStats 是每個狀態變更的必經之路
+  const won = interp.status === STATUS.WON;
+  if (won !== solved) setSolved(won);
   const s = editor.stats();
   const m = level.medals;
   const n = s.medalCost;
@@ -2365,6 +2427,7 @@ btnClear.addEventListener('click', () => {
   setStatus('', '');
   updateStats();
 });
+btnNext.addEventListener('click', gotoNextLevel);
 btnAns.addEventListener('click', () => {
   stopTimer();
   editor.loadProgram(level.solution);
@@ -2379,6 +2442,9 @@ btnAns.addEventListener('click', () => {
 selLevel.addEventListener('change', (e) => loadLevel(Number(e.target.value)));
 
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.repeat) {
+    if (document.activeElement === document.body) { e.preventDefault(); gotoNextLevel(); return; }
+  }
   if (e.target.tagName === 'SELECT') return;
   if (e.key === ' ') {
     e.preventDefault();
