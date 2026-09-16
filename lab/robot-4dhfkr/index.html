@@ -5,6 +5,18 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>邏輯機器人</title>
+
+<!-- ── PWA：加到主畫面後可全螢幕、離線玩 ──
+     路徑全用相對路徑，因為部署路徑含隨機尾碼（/lab/robot-xxxxxx/），
+     寫絕對路徑會全部 404。 -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#243447">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="邏輯機器人">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
 <style>
   :root {
     --bg: #1a2431;
@@ -30,8 +42,12 @@
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
-  #app { display: flex; gap: 14px; padding: 14px; height: 100%; align-items: stretch;
-         min-height: 0; }
+  /* 加到主畫面（standalone）＋ viewport-fit=cover 時，內容會延伸到狀態列與
+     Home 指示條底下，所以要補 safe-area，否則頂部列會被蓋住。 */
+  #app { display: flex; gap: 14px; height: 100%; align-items: stretch;
+         min-height: 0;
+         padding: calc(14px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right))
+                  calc(14px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left)); }
 
   /* ── 左：遊戲場景 ──
      min-height: 0 是關鍵：沒有它，flex 子項會被內容撐開，
@@ -247,7 +263,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/editor.js, js/main.js
-   建置：2026-09-16T17:13:39.464Z
+   建置：2026-09-16T22:52:02.937Z
 */
 (function () {
 'use strict';
@@ -3129,6 +3145,17 @@ window.addEventListener('orientationchange', () => {
 });
 
 // 開發用
+// ── PWA：註冊 service worker（只在 http/https 下註冊；
+//    單檔離線版是 file:// 開啟，註冊會失敗，直接跳過）──
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator
+    && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {
+      /* 沒有 sw.js（例如本機開發）→ 忽略即可 */
+    });
+  });
+}
+
 window.__game = {
   get world() { return world; },
   get interp() { return interp; },

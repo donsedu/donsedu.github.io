@@ -1,0 +1,35 @@
+{
+  "name": "邏輯機器人 — 程式邏輯解謎",
+  "short_name": "邏輯機器人",
+  "description": "20 關程式邏輯解謎。用「走、跳、轉彎、點燈、重複」積木寫程式，讓機器人點亮每一盞燈。",
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#243447",
+  "theme_color": "#243447",
+  "categories": ["education", "games"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
