@@ -227,7 +227,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/editor.js, js/main.js
-   建置：2026-09-16T16:19:07.023Z
+   建置：2026-09-16T16:28:35.727Z
 */
 (function () {
 'use strict';
@@ -1276,12 +1276,52 @@ const LEVELS = [
     medals: { gold: 4, silver: 6, bronze: 9 },
     solution: [R(2, W(1)), TR, R(2, W(1)), LIGHT],
   },
+  {
+    id: 'ch3-12',
+    chapter: 'loop',
+    title: '一邊走一邊點燈',
+    hint: '三盞燈排成一排。每走一步就要點一次燈 —— 這兩件事一直在重複。',
+    size: STD,
+    lights: [[3, 4], [4, 4], [5, 4]],
+    start: { x: 2, y: 4, facing: 1 },
+    allowed: ['walk', 'light', 'repeat'],
+    medals: { gold: 1, silver: 2, bronze: 4 },
+    solution: [R(3, [...W(1), LIGHT])],
+  },
+  {
+    id: 'ch3-13',
+    chapter: 'loop',
+    title: '轉四次彎',
+    hint: '走一小圈，每一格都要點燈。走一步、點燈、轉彎 —— 這三件事一直重複。',
+    size: STD,
+    lights: [[4, 3], [4, 4], [3, 4], [3, 3]],
+    start: { x: 3, y: 3, facing: 1 },
+    allowed: ['walk', 'light', 'turnRight', 'repeat'],
+    medals: { gold: 1, silver: 2, bronze: 4 },
+    solution: [R(4, [...W(1), LIGHT, TR])],
+  },
+  {
+    // ★ 這一關在教 toggle：同一個格子點兩次燈，燈會「熄掉」。
+    //   要點亮的三盞燈裡，中間那一盞在回頭的路上 ——
+    //   如果回來的時候也點燈，就會把自己剛剛點的燈關掉。
+    //   這是刻意設計的「同一格走兩次」，前幾章做不出來，只有迴圈才自然。
+    id: 'ch3-14',
+    chapter: 'loop',
+    title: '回頭路上不要再點燈',
+    hint: '右邊兩盞、左邊一盞。點完右邊要回頭 —— 想一下，回頭的路上還要不要點燈？',
+    size: STD,
+    lights: [[4, 4], [5, 4], [2, 4]],
+    start: { x: 3, y: 4, facing: 1 },
+    allowed: ['walk', 'light', 'turnRight', 'repeat'],
+    medals: { gold: 5, silver: 6, bronze: 8 },
+    solution: [R(2, [...W(1), LIGHT]), TR, TR, R(3, W(1)), LIGHT],
+  },
 
   // ═══════════ 第 4 章：巢狀迴圈 ═══════════
   //
   // ★ 這一章的設計核心：用 limits.repeat 逼出巢狀。
   //
-  //   以 ch4-12 為例（正方形，每格都要亮）：
+  //   以 ch4-15 為例（正方形，每格都要亮）：
   //     巢狀解  repeat 4 { repeat 2 { walk, light }, turnRight }
   //             → 外圈本體 2 格、內圈本體 2 格 → repeat=2 剛好塞得下 ✅
   //     不巢狀  repeat 4 { walk, light, walk, light, turnRight }
@@ -1293,7 +1333,7 @@ const LEVELS = [
   //   ⚠️ depth 必須 >= 3。depth=2 的話 canInsert 會擋掉「重複裡再放重複」，
   //   孩子會卡在「想得到卻放不進去」，比不會寫更挫折。
   {
-    id: 'ch4-12',
+    id: 'ch4-15',
     chapter: 'nested',
     title: '轉一圈，每格都亮',
     hint: '繞一圈，走過的每一格都要點燈。裡面那一圈在重複，外面那一圈也在重複。',
@@ -1305,7 +1345,7 @@ const LEVELS = [
     solution: [R(4, [R(2, [...W(1), LIGHT]), TR])],
   },
   {
-    id: 'ch4-13',
+    id: 'ch4-16',
     chapter: 'nested',
     title: '轉角才點燈',
     hint: '走三步才轉一次彎，只點四個角落。想想看，哪一件事在重複？',
@@ -1317,7 +1357,7 @@ const LEVELS = [
     solution: [R(4, [R(3, W(1)), LIGHT, TR])],
   },
   {
-    id: 'ch4-14',
+    id: 'ch4-17',
     chapter: 'nested',
     title: '長長的兩邊',
     hint: '這次不是正方形。兩個邊比較長、兩個邊比較短 —— 外面那一圈做兩次就好。',
@@ -1355,13 +1395,16 @@ const LIMIT_PRESETS = Object.freeze({
   // 第 3 章：★ 刻意收緊，逼出迴圈
   'ch3-10': { main: 4, repeat: 3, depth: 2 },   // 手寫 5 格塞不下
   'ch3-11': { main: 5, repeat: 3, depth: 2 },   // 手寫 6 格塞不下
+  'ch3-12': { main: 3, repeat: 2, depth: 2 },   // 手寫 6 格塞不下；本體要放 2 個動作
+  'ch3-13': { main: 3, repeat: 3, depth: 2 },   // 手寫 12 格塞不下；本體「走+點燈+轉彎」
+  'ch3-14': { main: 6, repeat: 3, depth: 2 },   // 手寫 10 格塞不下；要兩個迴圈才寫得完
 
   // 第 4 章：★ depth 一定要 3（不然「重複裡再放重複」會被 canInsert 擋掉）
   //          repeat 刻意收緊 —— 不收緊的話孩子會用「一層迴圈塞很多動作」繞過去，
   //          就學不到巢狀了。
-  'ch4-12': { main: 3, repeat: 2, depth: 3 },   // 外圈 2 格、內圈 2 格
-  'ch4-13': { main: 3, repeat: 3, depth: 3 },   // 外圈 3 格（內圈 + 點燈 + 轉彎）
-  'ch4-14': { main: 3, repeat: 4, depth: 3 },   // 外圈 4 格（兩個不同長度的內圈）
+  'ch4-15': { main: 3, repeat: 2, depth: 3 },   // 外圈 2 格、內圈 2 格
+  'ch4-16': { main: 3, repeat: 3, depth: 3 },   // 外圈 3 格（內圈 + 點燈 + 轉彎）
+  'ch4-17': { main: 3, repeat: 4, depth: 3 },   // 外圈 4 格（兩個不同長度的內圈）
 });
 
 // 套用到每一關（找不到就給保守預設值）
