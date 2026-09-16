@@ -53,8 +53,17 @@
   h1 { font-size: 16px; margin: 0; letter-spacing: -.01em; }
   .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px;
            background: var(--panel-3); color: var(--muted); vertical-align: middle; font-weight: 400; }
+  .badge.ch { background: #3d4f1f; color: var(--accent-2); font-weight: 700; letter-spacing: .02em; }
   #hint { font-size: 13px; line-height: 1.6; color: #c8d6e5; background: var(--panel-2);
           padding: 10px 12px; border-radius: 8px; border-left: 3px solid var(--accent); }
+  /* 章節介紹：只在該章第一關出現，跟關卡提示用虛線隔開 */
+  .hint-intro {
+    display: block; margin: -2px 0 9px; padding-bottom: 9px;
+    border-bottom: 1px dashed rgba(255, 255, 255, .16);
+    color: var(--accent-2); font-weight: 700; line-height: 1.65;
+  }
+  /* 過關訊息會有兩行（戰績 + 概念），要保留換行 */
+  #status, #result { white-space: pre-line; }
   #stats { font-size: 13px; line-height: 1.8; color: var(--muted); }
   #stats b { color: var(--text); }
   #stats .over { color: #ff8f8f; }
@@ -177,26 +186,27 @@
         <canvas id="board"></canvas>
       </div>
       <div class="kbd">
-        按鍵：<b>空白</b> 執行／停止　<b>N</b> 單步　<b>R</b> 重來　<b>←→</b> 換關卡
+        按鍵：<b>空白</b> 執行／停止　<b>N</b> 單步　<b>R</b> 回到起點　<b>←→</b> 換關卡
       </div>
     </div>
 
     <div id="side">
-      <h1>邏輯機器人 <span class="badge" id="ver">M3 編輯器</span></h1>
+      <h1>邏輯機器人 <span class="badge ch" id="chapterbadge">—</span>
+        <span class="badge" id="ver">M5</span></h1>
 
       <div id="hint">—</div>
 
       <div class="controls">
         <button class="ctl" id="run">▶ 執行</button>
         <button class="ctl ghost" id="stepbtn">⏭ 單步</button>
-        <button class="ctl ghost" id="reset">↻ 重來</button>
+        <button class="ctl ghost" id="reset">↻ 回到起點</button>
       </div>
 
       <div id="result"></div>
 
       <div class="controls">
         <button class="ctl primary" id="nextbtn">下一關 ▶</button>
-        <button class="ctl ghost" id="clearbtn">清空程式</button>
+        <button class="ctl ghost" id="clearbtn">🗑 全部重來</button>
         <button class="ctl ghost" id="showans">💡 看解答</button>
       </div>
 
@@ -208,8 +218,8 @@
 
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
-   來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/editor.js, js/main.js
-   建置：2026-09-16T15:53:45.780Z
+   來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/editor.js, js/main.js
+   建置：2026-09-16T16:02:40.079Z
 */
 (function () {
 'use strict';
@@ -1742,6 +1752,179 @@ class Renderer {
 }
 
 
+// ══════════ js/concepts.js ══════════
+/**
+ * concepts.js — 章節與運算思維概念（教學層）
+ *
+ * 為什麼要獨立一個檔案：
+ *   這款遊戲是**教具**，不是益智遊戲。孩子過關之後如果沒有人告訴他
+ *   「你剛剛學到的東西叫『迴圈』」，他就只學會了操作，不知道自己在學什麼。
+ *   把「這關在教什麼」變成**資料**，關卡與教材才能各自演化、也才能被測試。
+ *
+ * 章節與概念對應**沿用既定規格**（見復刻規格書 §5.1 與
+ * educational-game-development 的 reference），不要臨時發明新的分類。
+ *
+ * 命名規則（踩過一次坑）：
+ *   章節 key（basic / height / loop…）是**關卡資料在用的**，不可隨意改。
+ *   概念 key（sequence / loop / nested…）是**運算思維的正式名稱**。
+ *   兩者不一定同名 → 用 `conceptKey` 明確綁定，不要靠「key 一樣」的巧合。
+ *
+ * 全部是純函式／純資料 → 可以在 Node 裡測，不需要瀏覽器。
+ */
+
+/**
+ * 運算思維概念。key 是概念的正式名稱（不只給遊戲用，未來教材也會引用）。
+ *   label 顯示名稱
+ *   short 孩子做到了 → 告訴他這件事叫什麼
+ *   tips  還沒做到 → 給方法（不要用「你錯了」的語氣）
+ */
+const CONCEPTS = Object.freeze({
+  sequence: {
+    label: '序列',
+    short: '把指令照順序排好，機器人就會照著做',
+    tips: '想想看，機器人應該先做哪一件事、再做哪一件事。',
+  },
+  height: {
+    label: '高度判斷',
+    short: '先看清楚高度，再決定要「走」還是要「跳」',
+    tips: '高度一樣才能「走」，只要高度不同就要用「跳」。',
+  },
+  loop: {
+    label: '迴圈',
+    short: '把重複的事情包起來，程式就變短了',
+    tips: '有幾段積木一直在重複嗎？把它們包進「重複」裡試試看。',
+  },
+  nested: {
+    label: '巢狀迴圈',
+    short: '「重複」裡面再放「重複」，可以把大塊的重複也變短',
+    tips: '外圈的「重複」裡面，還可以再放一個「重複」。',
+  },
+  mixed: {
+    label: '綜合應用',
+    short: '把學過的方法組合起來用',
+    tips: '不一定要用最短的寫法，先讓它會動，再想辦法變短。',
+  },
+});
+
+/**
+ * 章節表。key 是關卡資料在用的 chapter 欄位。
+ *   conceptKey 這一章在教的概念（對應 CONCEPTS 的 key）
+ *   age        適合年齡（沿用規格書的難度曲線表）
+ *   intro      第一次進入這一章時，跟孩子說的一句話
+ */
+const CHAPTERS = Object.freeze({
+  basic: {
+    name: '第 1 章　操作與序列',
+    conceptKey: 'sequence',
+    age: '中班以上',
+    intro: '把指令一個一個排好，機器人會照你排的順序做。這就叫做「序列」。',
+  },
+  height: {
+    name: '第 2 章　高度',
+    conceptKey: 'height',
+    age: '大班以上',
+    intro: '高度一樣才能「走」，高度不同要用「跳」。先看清楚狀況，再決定用哪一個指令。',
+  },
+  loop: {
+    name: '第 3 章　迴圈',
+    conceptKey: 'loop',
+    age: '小二以上',
+    intro: '有幾段指令一直重複嗎？把它們包進「重複」裡，程式就變短了。',
+  },
+  nested: {
+    name: '第 4 章　巢狀迴圈',
+    conceptKey: 'nested',
+    age: '小三以上',
+    intro: '「重複」裡面還可以再放「重複」。這是把大問題拆成小問題的方法。',
+  },
+  mixed: {
+    name: '第 5 章　綜合',
+    conceptKey: 'mixed',
+    age: '小三以上',
+    intro: '把前面學過的全部用上。同一個問題常常有好多種寫法。',
+  },
+});
+
+/**
+ * detectConcepts() 能從程式結構看出來的概念。
+ *
+ * ⚠️ 刻意不含 height / mixed：那兩個是「關卡在練什麼」，
+ * 沒辦法從積木的長相看出來（jump 就只是一個指令）。
+ * conceptFeedback() 對這種概念會走「複習」而不是「你剛剛用了」那條路。
+ */
+const DETECTABLE_CONCEPTS = Object.freeze(['sequence', 'loop', 'nested']);
+
+/** 取得某一關所屬的章節資料（找不到回 null，不要讓 UI 壞掉） */
+function chapterOf(chapterKey) {
+  return CHAPTERS[chapterKey] ?? null;
+}
+
+/** 章節要顯示的概念名稱（找不到回「—」） */
+function conceptLabelOf(chapterKey) {
+  const ch = chapterOf(chapterKey);
+  return ch ? (CONCEPTS[ch.conceptKey]?.label ?? '—') : '—';
+}
+
+/**
+ * 這個程式用到了哪些運算思維概念。
+ * 只看**程式本身的結構**，不看關卡 —— 所以同一關可以有不同答案，
+ * 孩子換寫法時得到的回饋也會跟著變。
+ *
+ * @returns {string[]} 概念 key（依「由基礎到進階」排序，順序固定才好測）
+ */
+function detectConcepts(program) {
+  if (!Array.isArray(program) || program.length === 0) return [];
+
+  const found = new Set();
+  found.add('sequence'); // 只要排得出程式，就一定有序列
+
+  const walk = (list, depth) => {
+    for (const b of list) {
+      if (!b || b.name !== 'repeat') continue;
+      found.add(depth === 0 ? 'loop' : 'nested');
+      walk(b.body ?? [], depth + 1);
+    }
+  };
+  walk(program, 0);
+
+  return DETECTABLE_CONCEPTS.filter((k) => found.has(k));
+}
+
+/**
+ * 過關時要跟孩子說的一句話。
+ *
+ * 兩種情況**刻意分開**：
+ *   做到了 → 說出這個概念的名字，把「操作」升級成「知識」
+ *   沒做到 → 用複習的語氣給方法，不要說「你錯了」
+ *
+ * @param {object} level 關卡資料（用 chapter 判斷這關在教什麼）
+ * @param {string[]} achieved detectConcepts() 的結果
+ * @returns {string} 要顯示的句子（沒有可講的就回空字串）
+ */
+function conceptFeedback(level, achieved = []) {
+  const ch = chapterOf(level?.chapter);
+  if (!ch) return '';
+  const c = CONCEPTS[ch.conceptKey];
+  if (!c) return '';
+
+  if (achieved.includes(ch.conceptKey)) {
+    return `💡 你剛剛用了「${c.label}」——${c.short}。`;
+  }
+  return `💡 這一關在練「${c.label}」——${c.tips}`;
+}
+
+/**
+ * 進入新章節時要顯示的介紹。同一章只有第一關會顯示。
+ * @returns {string} 介紹文字（不是該章第一關就回空字串）
+ */
+function chapterIntroFor(levels, index) {
+  const def = levels?.[index];
+  if (!def) return '';
+  const isFirstOfChapter = index === 0 || levels[index - 1].chapter !== def.chapter;
+  return isFirstOfChapter ? (chapterOf(def.chapter)?.intro ?? '') : '';
+}
+
+
 // ══════════ js/editor.js ══════════
 /**
  * editor.js — 程式編輯器 UI（DOM）
@@ -2201,7 +2384,8 @@ function getListLength(program, parentPath) {
  * 互動：
  *   ▶ 執行    把編輯器裡的程式跑起來（含動畫與「目前執行到哪個積木」的高亮）
  *   ⏭ 單步    一次執行一個動作（教學價值最高的功能）
- *   ↻ 重來    回到起始狀態，程式保留
+ *   ↻ 回到起點  機器人回起始位置、燈全部熄掉，**程式保留**（改一個積木再跑一次）
+ *   🗑 全部重來  連程式積木一起清空（換下一個孩子玩時用）
  *   💡 看解答  把關卡的參考解載進編輯器（不是直接給答案，是給對照）
  *
  * 拖放重排完成後，這裡只負責把程式交給引擎，不需要知道編輯器內部怎麼運作。
@@ -2228,6 +2412,7 @@ const btnReset = document.getElementById('reset');
 const btnClear = document.getElementById('clearbtn');
 const btnAns = document.getElementById('showans');
 const btnNext = document.getElementById('nextbtn');
+const elChapterBadge = document.getElementById('chapterbadge');
 const elResult = document.getElementById('result');
 
 // ── 狀態 ───────────────────────────────────────────
@@ -2281,7 +2466,15 @@ function loadLevel(index) {
   renderer.resize(world.tiles);
   renderer.draw(world);
 
-  elHint.textContent = level.hint ?? '';
+  // 章節標籤：讓孩子隨時知道「我現在在學什麼」
+  const ch = chapterOf(level.chapter);
+  elChapterBadge.textContent = conceptLabelOf(level.chapter);
+  elChapterBadge.title = ch ? `${ch.name}（適合${ch.age}）` : '';
+
+  // 章節介紹只在該章第一關出現，跟關卡提示用虛線隔開
+  const intro = chapterIntroFor(LEVELS, index);
+  elHint.innerHTML =
+    (intro ? `<span class="hint-intro">${esc(intro)}</span>` : '') + esc(level.hint ?? '');
   editor.setLevel(level);
   interp.load(editor.getProgram());
 
@@ -2422,11 +2615,25 @@ function finish() {
 
   if (interp.status === STATUS.WON) {
     const medal = interp.medal(level.medals);
+    const lines = [];
     if (medal) {
       const label = { gold: '金牌', silver: '銀牌', bronze: '銅牌' }[medal];
-      setStatus(`🎉 過關！拿到${label}（用了 ${interp.totalInstructions} 個積木）`, 's-won');
+      lines.push(`🎉 過關！拿到${label}（用了 ${interp.totalInstructions} 個積木）`);
+    } else {
+      lines.push('🎉 過關！');
     }
+    // ★ 教學層：把「操作」升級成「知識」——
+    //   孩子用 repeat 過了關，要有人告訴他那叫做「迴圈」。
+    //   看的是「他實際寫出來的程式結構」，不是關卡本身，所以換寫法回饋也會變。
+    const fb = conceptFeedback(level, detectConcepts(editor.getProgram()));
+    if (fb) lines.push(fb);
+    setStatus(lines.join('\n'), 's-won');
   }
+}
+
+/** 把文字安全地放進 innerHTML（關卡提示是我們自己的靜態字串，仍保險處理） */
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
 function resetWorld() {
