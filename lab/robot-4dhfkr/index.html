@@ -25,14 +25,24 @@
     background: var(--bg); color: var(--text);
     font-family: "PingFang TC", "Heiti TC", "Noto Sans TC", -apple-system, "Helvetica Neue", sans-serif;
     -webkit-text-size-adjust: 100%;
+    /* ★ 關掉「連點兩下放大」——孩子在指令盤上連續點積木時會誤觸。
+       manipulation 只擋雙擊縮放，雙指縮放仍然可用（不犧牲無障礙）。 */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
-  #app { display: flex; gap: 14px; padding: 14px; height: 100%; align-items: flex-start; }
+  #app { display: flex; gap: 14px; padding: 14px; height: 100%; align-items: stretch;
+         min-height: 0; }
 
-  /* ── 左：遊戲場景 ── */
-  #left { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-  #stage { display: flex; align-items: center; justify-content: center; }
+  /* ── 左：遊戲場景 ──
+     min-height: 0 是關鍵：沒有它，flex 子項會被內容撐開，
+     #stage 就量不到「真正剩下的空間」，畫布也就無從放大。 */
+  #left { flex: 1 1 auto; min-width: 0; min-height: 0;
+          display: flex; flex-direction: column; gap: 10px; }
+  #stage { flex: 1 1 auto; min-height: 0; min-width: 0;
+           display: flex; align-items: center; justify-content: center;
+           overflow: hidden; }
   canvas { display: block; border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,.35);
-           max-width: 100%; height: auto; touch-action: manipulation; }
+           max-width: 100%; max-height: 100%; touch-action: manipulation; }
   #topbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   #topbar select {
     flex: 1 1 220px; min-width: 160px;
@@ -70,6 +80,10 @@
 
   /* 控制列 */
   .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  button, .ed-row, select {
+    touch-action: manipulation;   /* 連點兩下不要放大 */
+    user-select: none; -webkit-user-select: none;
+  }
   button.ctl {
     flex: 1 1 auto; font: inherit; font-size: 14px; font-weight: 600;
     border-radius: 8px; border: 1px solid transparent; padding: 10px 12px;
@@ -171,8 +185,14 @@
 
   .kbd { font-size: 11px; color: var(--muted); line-height: 1.7; }
 
-  @media (max-width: 940px) {
+  /* ★ 上下堆疊的時機：螢幕窄 **或** 直向。
+     iPad 直向是 1024px 寬，不會觸發「窄」的條件，但並排的話畫布只分到
+     約 620px（扣掉右側 380px 面板）—— 堆疊起來畫布可以吃滿 1024px。 */
+  @media (max-width: 940px), (orientation: portrait) {
     #app { flex-direction: column; height: auto; }
+    #left { width: 100%; }
+    /* 給畫布一個明確高度，不然在堆疊版面它會縮成 0 */
+    #stage { flex: 0 0 auto; height: clamp(240px, 52vh, 620px); }
     #side { flex: 1 1 auto; width: 100%; max-height: none; }
     /* 手機版：關卡選單黏在畫面頂端，
        程式編輯器在下面時也還看得到自己在第幾關 */
@@ -227,7 +247,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/editor.js, js/main.js
-   建置：2026-09-16T16:42:29.602Z
+   建置：2026-09-16T17:13:39.464Z
 */
 (function () {
 'use strict';
@@ -1659,6 +1679,10 @@ const METRICS = Object.freeze({
   blockH: 22,   // 每單位高度的側面高度
 });
 
+/** 畫布縮放的上下限：太小看不清楚、太大會像素化得誇張 */
+const MIN_SCALE = 0.35;
+const MAX_SCALE = 3;
+
 const THEME = Object.freeze({
   background: '#243447',
   floorTop: '#c3ced9',
@@ -1807,18 +1831,55 @@ class Renderer {
     this.showGrid = options.showGrid ?? true;
     this.layout = null;
     this.dpr = 1;
+    this.scale = 1;   // ★ 依可用空間等比縮放的比例（1 = 原始大小）
   }
 
-  /** 依世界大小與裝置像素比調整畫布尺寸 */
+  /** 依世界大小算出畫布該有多大（原始大小，不含縮放） */
   resize(tiles) {
     this.layout = computeLayout(tiles, this.metrics, this.padding);
+    this.applySize();
+  }
+
+  /**
+   * ★ 依可用空間等比縮放畫布。
+   *
+   * 為什麼需要：canvas 的尺寸是「地圖算出來的固定像素」（例如 592×364），
+   * 只靠 CSS 的 `max-width: 100%` 只能防止溢出，**永遠不會放大** ——
+   * 所以在大螢幕（iPad）上畫面會擠在中間一小塊。
+   *
+   * @param {number} maxW 可用寬度（CSS px）
+   * @param {number} maxH 可用高度（CSS px）
+   * @returns {number} 實際採用的縮放比例
+   */
+  fitToBox(maxW, maxH) {
+    if (!this.layout) return 1;
+    if (!(maxW > 0) || !(maxH > 0)) {   // 版面還沒算好 → 先維持原始大小
+      this.scale = 1;
+      this.applySize();
+      return 1;
+    }
+    const raw = Math.min(maxW / this.layout.width, maxH / this.layout.height);
+    this.scale = Math.max(MIN_SCALE, Math.min(raw, MAX_SCALE));
+    this.applySize();
+    return this.scale;
+  }
+
+  /** 把 layout + scale 套到 canvas 上 */
+  applySize() {
+    if (!this.layout) return;
     const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
     this.dpr = dpr;
-    this.canvas.width = Math.round(this.layout.width * dpr);
-    this.canvas.height = Math.round(this.layout.height * dpr);
-    this.canvas.style.width = `${this.layout.width}px`;
-    this.canvas.style.height = `${this.layout.height}px`;
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const s = this.scale;
+    const cssW = this.layout.width * s;
+    const cssH = this.layout.height * s;
+
+    // ⚠️ 備援解析度要跟 CSS 尺寸一起放大，否則放大後會模糊
+    //    （只放大 style.width 的話，是把小圖拉大）
+    this.canvas.width = Math.round(cssW * dpr);
+    this.canvas.height = Math.round(cssH * dpr);
+    this.canvas.style.width = `${Math.round(cssW)}px`;
+    this.canvas.style.height = `${Math.round(cssH)}px`;
+    this.ctx.setTransform(dpr * s, 0, 0, dpr * s, 0, 0);
   }
 
   get origin() {
@@ -2784,7 +2845,8 @@ function loadLevel(index) {
   world = new World(buildTiles(level), level.start);
   interp = new Interpreter(world);
 
-  renderer.resize(world.tiles);
+  renderer.resize(world.tiles);   // 先算這一關的原始畫布大小
+  fitCanvas();                    // 再依可用空間等比放大
   renderer.draw(world);
 
   // 章節標籤：讓孩子隨時知道「我現在在學什麼」
@@ -3040,14 +3102,30 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ── 畫布尺寸（RWD）─────────────────────────────────
+/**
+ * 依「場景區實際剩下的空間」等比縮放畫布。
+ *
+ * 為什麼要量元素而不是用 window.innerWidth：
+ *   畫布可用的是「扣掉右側面板、上下提示列之後」的空間，
+ *   用視窗寬高去算會算錯（尤其是並排版面）。
+ */
+function fitCanvas() {
+  if (!world || !renderer.layout) return;
+  const box = document.getElementById('stage').getBoundingClientRect();
+  renderer.fitToBox(box.width, box.height);
+  renderer.draw(world);
+}
+
 let resizeTimer = null;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    if (!world) return;
-    renderer.resize(world.tiles);
-    renderer.draw(world);
-  }, 120);
+  resizeTimer = setTimeout(fitCanvas, 120);
+});
+// iPad 轉向時 resize 有時不會即時反映最終尺寸 → 補一次
+window.addEventListener('orientationchange', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(fitCanvas, 350);
 });
 
 // 開發用
@@ -3055,6 +3133,8 @@ window.__game = {
   get world() { return world; },
   get interp() { return interp; },
   get editor() { return editor; },
+  get renderer() { return renderer; },
+  fitCanvas,
   LEVELS, World, Interpreter,
   loadLevel,
 };
