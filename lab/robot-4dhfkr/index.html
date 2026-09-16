@@ -227,7 +227,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/editor.js, js/main.js
-   建置：2026-09-16T16:28:35.727Z
+   建置：2026-09-16T16:42:29.602Z
 */
 (function () {
 'use strict';
@@ -694,6 +694,28 @@ function cloneProgram(program) {
       ? { name: 'repeat', counter: b.counter, body: cloneProgram(b.body) }
       : { ...b }
   );
+}
+
+/**
+ * 兩個程式在結構上是否完全相同。
+ *
+ * 只看「指令、次數、巢狀」——不看物件身分，也不管是怎麼拼出來的。
+ * 用途：孩子過關時，判斷他的寫法跟參考解一不一樣。
+ *   （一樣 → 沒什麼好講的；不一樣 → 這是「同一問題多種解法」最好的教學時機）
+ */
+function isSameProgram(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i];
+    const y = b[i];
+    if (!x || !y || x.name !== y.name) return false;
+    if (x.name === 'repeat') {
+      if ((x.counter ?? 0) !== (y.counter ?? 0)) return false;
+      if (!isSameProgram(x.body ?? [], y.body ?? [])) return false;
+    }
+  }
+  return true;
 }
 
 /** 空程式 */
@@ -1368,6 +1390,59 @@ const LEVELS = [
     medals: { gold: 1, silver: 2, bronze: 3 },
     solution: [R(2, [R(2, [...W(1), LIGHT]), TR, R(3, [...W(1), LIGHT]), TR])],
   },
+  // ═══════════ 第 5 章：綜合 ═══════════
+  //
+  // 這一章把前面學過的全部用上，並且教一個前面教不到的概念：
+  //   「同一個問題常常有好多種寫法」——參考解不是唯一解。
+  //
+  // ch5-20 刻意設計成「兩邊都可以繞」，所以有兩個結構完全不同的解：
+  //   解 A  跳上去 → 往 +y 繞（turnLeft）          = 2 格（金牌）
+  //   解 B  跳上去 → 先左轉 → 往 +x 繞（turnRight）= 3 格（銀牌）
+  //   兩個都真的會過關（有測試跑解 B）。
+  // ⚠️ 這兩個解是「同一組積木、轉彎方向相反」——正好教到「換個方向也通」。
+  // 孩子用解 B 過關時，遊戲會告訴他「你的寫法跟參考解不一樣，但一樣過關了」。
+  {
+    id: 'ch5-18',
+    chapter: 'mixed',
+    title: '跳上去再走一段',
+    hint: '前面高起來了，先跳上去。上去之後又是一段重複的路。',
+    size: STD,
+    platform: [[4, 4, 2], [5, 4, 2], [6, 4, 2], [7, 4, 2]],
+    lights: [[5, 4], [6, 4], [7, 4]],
+    start: { x: 3, y: 4, facing: 1 },
+    allowed: ['jump', 'walk', 'light', 'repeat'],
+    medals: { gold: 2, silver: 3, bronze: 5 },
+    solution: [...J(1), R(3, [...W(1), LIGHT])],
+  },
+  {
+    id: 'ch5-19',
+    chapter: 'mixed',
+    title: '一階一階往上跳',
+    hint: '一階比一階高，每跳一階就點燈 —— 這兩件事一直重複。',
+    size: STD,
+    platform: [[4, 4, 2], [5, 4, 3], [6, 4, 4]],
+    lights: [[4, 4], [5, 4], [6, 4]],
+    start: { x: 3, y: 4, facing: 1 },
+    allowed: ['jump', 'light', 'repeat'],
+    medals: { gold: 1, silver: 2, bronze: 4 },
+    solution: [R(3, [...J(1), LIGHT])],
+  },
+  {
+    id: 'ch5-20',
+    chapter: 'mixed',
+    title: '繞一圈，兩邊都可以',
+    hint: '最後一關。跳上去繞一圈，每一格都要點燈 —— 兩邊都可以走，選一邊就好。',
+    size: STD,
+    platform: [
+      [3, 3, 2], [4, 3, 2], [5, 3, 2], [5, 4, 2],
+      [5, 5, 2], [4, 5, 2], [3, 5, 2], [3, 4, 2],
+    ],
+    lights: [[3, 3], [4, 3], [5, 3], [5, 4], [5, 5], [4, 5], [3, 5], [3, 4]],
+    start: { x: 3, y: 2, facing: 2 },
+    allowed: ['jump', 'walk', 'light', 'turnLeft', 'turnRight', 'repeat'],
+    medals: { gold: 2, silver: 3, bronze: 6 },
+    solution: [...J(1), R(4, [R(2, [...W(1), LIGHT]), TL])],
+  },
 ];
 
 /**
@@ -1402,6 +1477,11 @@ const LIMIT_PRESETS = Object.freeze({
   // 第 4 章：★ depth 一定要 3（不然「重複裡再放重複」會被 canInsert 擋掉）
   //          repeat 刻意收緊 —— 不收緊的話孩子會用「一層迴圈塞很多動作」繞過去，
   //          就學不到巢狀了。
+  // 第 5 章：綜合。手寫一定塞不下（要套前面學過的方法）
+  'ch5-18': { main: 4, repeat: 2, depth: 2 },   // 手寫 7 格塞不下
+  'ch5-19': { main: 3, repeat: 2, depth: 2 },   // 手寫 6 格塞不下
+  'ch5-20': { main: 3, repeat: 2, depth: 3 },   // 手寫 21 格塞不下；★ 兩邊都可以走
+
   'ch4-15': { main: 3, repeat: 2, depth: 3 },   // 外圈 2 格、內圈 2 格
   'ch4-16': { main: 3, repeat: 3, depth: 3 },   // 外圈 3 格（內圈 + 點燈 + 轉彎）
   'ch4-17': { main: 3, repeat: 4, depth: 3 },   // 外圈 4 格（兩個不同長度的內圈）
@@ -2075,6 +2155,28 @@ function chapterIntroFor(levels, index) {
   if (!def) return '';
   const isFirstOfChapter = index === 0 || levels[index - 1].chapter !== def.chapter;
   return isFirstOfChapter ? (chapterOf(def.chapter)?.intro ?? '') : '';
+}
+
+/**
+ * 「你的寫法跟參考解不一樣」的回饋。
+ *
+ * 規格書列了一個其他章節教不到的概念：
+ *   「參考解 vs 自己的解 → 同一個問題有多種解法」。
+ *
+ * 所以過關時比對孩子的程式與參考解：**不一樣就告訴他這件事**。
+ * 這是這個概念最自然、也最有力的教學時機 ——
+ * 他已經用自己的方式成功了，不是被說教。
+ *
+ * ⚠️ 只比對「結構」，不比對寫法過程。同樣結構拼出來的程式不會誤判成不同解。
+ *
+ * @param {object} level   關卡資料（用 solution 當對照）
+ * @param {Array}  program 孩子的程式
+ * @returns {string} 要顯示的句子；跟參考解相同（或沒有參考解）就回空字串
+ */
+function alternativeSolutionFeedback(level, program) {
+  if (!Array.isArray(level?.solution) || level.solution.length === 0) return '';
+  if (isSameProgram(program, level.solution)) return '';
+  return '🔀 你的寫法跟參考解不一樣，但一樣過關了 —— 同一個問題常常有好多種寫法。';
 }
 
 
@@ -2862,6 +2964,13 @@ function finish() {
     //   看的是「他實際寫出來的程式結構」，不是關卡本身，所以換寫法回饋也會變。
     const fb = conceptFeedback(level, detectConcepts(editor.getProgram()));
     if (fb) lines.push(fb);
+
+    // ★ 「同一個問題常常有好多種寫法」——
+    //   孩子的程式跟參考解不同就告訴他這件事。這是最有力的教學時機：
+    //   他已經用自己的方式成功了，不是被說教。
+    const alt = alternativeSolutionFeedback(level, editor.getProgram());
+    if (alt) lines.push(alt);
+
     setStatus(lines.join('\n'), 's-won');
   }
 }
