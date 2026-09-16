@@ -202,7 +202,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/editor.js, js/main.js
-   建置：2026-09-16T12:59:11.793Z
+   建置：2026-09-16T13:05:42.040Z
 */
 (function () {
 'use strict';
@@ -1659,7 +1659,14 @@ class Renderer {
     const w = tw * 0.62;      // 機器人半寬
     const hgt = m.blockH * 1.15; // 機身高度
     const cx = base.sx;
-    const cy = base.sy - th * 0.35; // 稍微往上站一點，避免被柱頂蓋住
+
+    // ⚠️ 等角投影的「站在上面」：機身是從 cy 往下畫 hgt 的，
+    // 所以要讓「底部菱形的中心」正好落在柱頂中心 base.sy，
+    // 也就是 cy + hgt = base.sy → cy = base.sy - hgt。
+    // （先前寫成 cy = base.sy - th*0.35，只抬了 5.6px，
+    //   機器人因此整個人低了 19.7px、下半身垂到格子外面，
+    //   站在燈格上時看起來像沒對齊。）
+    const cy = base.sy - hgt;
 
     ctx.save();
 
