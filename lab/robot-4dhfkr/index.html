@@ -135,6 +135,14 @@
   .ed-row.ed-focus-target { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok); }
   .ed-row.ed-dragging { opacity: .4; }
   .ed-row.ed-dropok { border-color: var(--accent-2); border-style: dashed; }
+  /* ★ 插入游標：下一個積木會放在這裡（綠色＝目前位置） */
+  .ed-row.ed-insert-before::before {
+    content: ''; position: absolute; left: 8px; right: 8px; top: -4px;
+    height: 4px; border-radius: 2px; background: var(--ok);
+    box-shadow: 0 0 9px rgba(87, 199, 133, .9);
+  }
+  .ed-row.ed-insert-here { border-color: var(--ok); border-style: solid; background: #1e3a2a; }
+
   /* 拖到積木上：在上方畫一條插入線，表示「會插在它前面」 */
   .ed-row { position: relative; }
   .ed-row.ed-drop-before::before {
@@ -219,7 +227,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/editor.js, js/main.js
-   建置：2026-09-16T16:11:33.341Z
+   建置：2026-09-16T16:19:07.023Z
 */
 (function () {
 'use strict';
@@ -843,15 +851,37 @@ function canInsert(program, parentPath, isRepeatBlock, limits = DEFAULT_LIMITS) 
 // ─────────────────────────────────────────────
 
 /**
+ * 在某個容器的指定位置插入積木。
+ *
+ * index 是「插在第幾個之前」：0 = 最前面、list.length = 最後面。
+ * 超出範圍會被夾到合法值（寧可放到最近的位置，也不要整個動作失敗）。
+ */
+function insertAt(program, parentPath, index, block) {
+  const next = cloneProgram(program);
+  const list = getListAt(next, parentPath);
+  const i = Number.isInteger(index)
+    ? Math.max(0, Math.min(index, list.length))
+    : list.length;
+  list.splice(i, 0, cloneProgram([block])[0]);
+  return next;
+}
+
+/** 某個容器裡有幾個積木（路徑無效時回 0，不丟錯） */
+function getListLength(program, parentPath = []) {
+  try {
+    return getListAt(program, parentPath).length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * 在指定容器的最後面追加一個積木。
  * @param {Array} program
  * @param {Array<number>} parentPath [] = 主程式，[i] = 第 i 個 repeat 的 body
  */
 function appendBlock(program, parentPath, block) {
-  const next = cloneProgram(program);
-  const list = getListAt(next, parentPath);
-  list.push(block);
-  return next;
+  return insertAt(program, parentPath, getListLength(program, parentPath), block);
 }
 
 /** 刪除某個路徑的積木（刪掉 repeat 會連裡面的內容一起消失） */
@@ -2016,6 +2046,9 @@ function chapterIntroFor(levels, index) {
  *   2. 固定格數：用關卡的 limits 決定，空格會顯示出來
  *      → 格數用完時給「想想看能不能用重複」的提示，而不是冷冰冰的「不能加了」
  *   3. 重複積木採原版做法：先放一個空的重複殼，再把積木放進去
+ *   4. ★ 插入游標：點某一列 = 把「下一個積木要放的位置」移到那裡
+ *      → 不必先放好再拖來拖去，可以像打字一樣從中間插入
+ *      → 點空白格 = 游標移到最後面（一般的「接著往後加」）
  *
  * 這個模組只負責「畫」與「收事件」，所有規則都在 program.js（純函式、已測試）。
  */
@@ -2044,6 +2077,7 @@ class Editor {
     this.limits = { ...DEFAULT_LIMITS };
     this.allowed = [];
     this.focusPath = [];        // 新積木要放進哪個容器（[] = 主程式）
+    this.insertIndex = null;    // ★ 新積木要插進該容器的第幾個位置（null = 最後面）
     this.executingPath = null;  // 目前執行到的積木（高亮用）
     this.dragFrom = null;
 
@@ -2066,6 +2100,7 @@ class Editor {
       <div class="ed-program" tabindex="0"></div>
       <div class="ed-hintline"></div>
     `;
+    this.$paletteLabel = this.root.querySelector('.ed-palette-label');
     this.$paletteItems = this.root.querySelector('.ed-palette-items');
     this.$focusBar = this.root.querySelector('.ed-focusbar');
     this.$focusText = this.root.querySelector('.ed-focus-text');
@@ -2101,6 +2136,7 @@ class Editor {
     this.allowed = def.allowed ?? [];
     this.program = emptyProgram();
     this.focusPath = [];
+    this.insertIndex = null;
     this.executingPath = null;
     this.render();
     this.onChange(this.program);
@@ -2113,6 +2149,7 @@ class Editor {
   setProgram(program) {
     this.program = program;
     this.focusPath = [];
+    this.insertIndex = null;
     this.render();
     this.onChange(this.program);
   }
@@ -2134,6 +2171,7 @@ class Editor {
   clearProgram() {
     this.program = emptyProgram();
     this.focusPath = [];
+    this.insertIndex = null;
     this.render();
     this.onChange(this.program);
   }
@@ -2150,6 +2188,14 @@ class Editor {
   renderPalette() {
     const items = [...PALETTE.filter((n) => this.allowed.includes(n))];
     if (this.allowed.includes('repeat')) items.push('repeat');
+
+    // 讓孩子知道下一個積木會放在哪裡（光靠那條綠線，格數多的時候看不出來）
+    const inRepeat = this.focusPath.length > 0;
+    const where = this.insertIndex === null
+      ? '接著往後加'
+      : `插在第 ${this.insertIndex + 1} 格前面`;
+    this.$paletteLabel.textContent =
+      `指令積木（點一下放進：${inRepeat ? '「重複」裡，' : ''}${where}）`;
 
     this.$paletteItems.innerHTML = items.map((name) => `
       <button type="button" class="ed-pal" data-name="${name}">
@@ -2226,9 +2272,29 @@ class Editor {
       });
     });
 
-    // 點空白處 = 把焦點設回主程式
+    // ★ 點某一列 = 把「下一個積木要放的位置」移到那裡（像文字編輯器的游標）
+    //   點積木      → 插在它前面
+    //   點重複殼/右括號 → 游標移到那個重複的最後面
+    //   點空白格    → 游標移到該容器的最後面
+    this.$program.querySelectorAll('.ed-row').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-act]')) return;   // 按鈕有自己的行為
+        const kind = el.dataset.kind;
+        if (kind === 'block') {
+          const p = JSON.parse(el.dataset.ownerPath);
+          this.setFocus(p.slice(0, -1), p[p.length - 1]);
+        } else if (kind === 'empty') {
+          this.setFocus(JSON.parse(el.dataset.parentPath), null);
+        } else if (kind === 'repeat-open' || kind === 'repeat-close') {
+          this.setFocus(JSON.parse(el.dataset.ownerPath), null);
+        }
+        e.stopPropagation();
+      });
+    });
+
+    // 點空白處 = 游標回到主程式的最後面
     this.$program.addEventListener('click', (e) => {
-      if (e.target === this.$program) this.setFocus([]);
+      if (e.target === this.$program) this.setFocus([], null);
     });
   }
 
@@ -2319,6 +2385,21 @@ class Editor {
       );
       if (openIdx >= 0 && nodes[openIdx]) nodes[openIdx].classList.add('ed-focus-target');
     }
+
+    // ★ 插入游標：下一個積木會放在哪裡
+    nodes.forEach((el) => el.classList.remove('ed-insert-before', 'ed-insert-here'));
+    if (this.insertIndex !== null) {
+      // 插在某個積木前面 → 在那列上方畫一條線
+      const key = [...this.focusPath, this.insertIndex].join('.');
+      const i = rows.findIndex((r) => r.path && r.path.join('.') === key);
+      if (i >= 0 && nodes[i]) nodes[i].classList.add('ed-insert-before');
+    } else {
+      // 游標在最後面 → 標在該容器第一個空格上（容器滿了就沒得標，也沒位置可放）
+      const i = rows.findIndex(
+        (r) => r.kind === 'empty' && r.parentPath.join('.') === this.focusPath.join('.')
+      );
+      if (i >= 0 && nodes[i]) nodes[i].classList.add('ed-insert-here');
+    }
   }
 
   highlight() {
@@ -2358,15 +2439,22 @@ class Editor {
       this.notice(check.reason, check.hint);
       return;
     }
-    const insertIndex = getListLength(this.program, this.focusPath);
+    // ★ 放進游標所在的位置（沒設游標就是最後面）
+    const at = this.insertIndex ?? getListLength(this.program, this.focusPath);
     const block = name === 'repeat'
       ? { name: 'repeat', counter: 2, body: [] }
       : { name };
-    this.commit(appendBlock(this.program, this.focusPath, block));
+    this.commit(insertAt(this.program, this.focusPath, at, block));
+
     // 放進重複殼之後，焦點自動移進去，這樣孩子接著點就會放到裡面
     if (name === 'repeat') {
-      this.setFocus([...this.focusPath, insertIndex]);
+      this.setFocus([...this.focusPath, at], null);
+      return;
     }
+    // 連續放積木時游標往後移，維持「一直往後加」的手感
+    this.insertIndex = at + 1;
+    this.clampCursor();
+    this.render();
   }
 
   doRemove(path) {
@@ -2405,14 +2493,29 @@ class Editor {
     this.commit(r.program);
   }
 
-  setFocus(path) {
+  /**
+   * 移動編輯焦點。
+   * @param {number[]} path        要放進哪個容器
+   * @param {number|null} insertIndex 要插在第幾個位置（null = 最後面）
+   */
+  setFocus(path, insertIndex = null) {
     this.focusPath = path;
+    this.insertIndex = insertIndex;
+    this.clampCursor();
     this.render();
+  }
+
+  /** 游標不能指到容器外面（刪掉積木之後長度會變短） */
+  clampCursor() {
+    if (this.insertIndex === null) return;
+    const len = getListLength(this.program, this.focusPath);
+    if (this.insertIndex > len) this.insertIndex = null;
   }
 
   /** 所有異動的唯一出口：更新狀態 → 重畫 → 通知外面 */
   commit(program) {
     this.program = program;
+    this.clampCursor();   // 內容變了，游標可能超出範圍
     this.render();
     this.onChange(this.program);
   }
@@ -2446,15 +2549,8 @@ function pathToBlock(program, path) {
   return null;
 }
 
-function getListLength(program, parentPath) {
-  let list = program;
-  for (const idx of parentPath) {
-    const node = list[idx];
-    if (!node || node.name !== 'repeat') return 0;
-    list = node.body;
-  }
-  return list.length;
-}
+// getListLength 已搬到 program.js（純函式、有測試）。
+// 之前這裡有一份自己的實作 —— 同一套規則存在兩份，就是兩邊會慢慢不一致的開始。
 
 
 // ══════════ js/main.js ══════════
