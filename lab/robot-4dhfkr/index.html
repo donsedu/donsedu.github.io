@@ -126,6 +126,13 @@
   .ed-row.ed-focus-target { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok); }
   .ed-row.ed-dragging { opacity: .4; }
   .ed-row.ed-dropok { border-color: var(--accent-2); border-style: dashed; }
+  /* 拖到積木上：在上方畫一條插入線，表示「會插在它前面」 */
+  .ed-row { position: relative; }
+  .ed-row.ed-drop-before::before {
+    content: ''; position: absolute; left: 4px; right: 4px; top: -4px;
+    height: 4px; border-radius: 2px; background: var(--accent-2);
+    box-shadow: 0 0 8px rgba(255, 217, 94, .85);
+  }
 
   .ed-grip { color: #6f8399; font-size: 13px; cursor: grab; }
   .ed-label { flex: 1 1 auto; }
@@ -202,7 +209,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/editor.js, js/main.js
-   建置：2026-09-16T13:05:42.040Z
+   建置：2026-09-16T15:53:45.780Z
 */
 (function () {
 'use strict';
@@ -903,14 +910,20 @@ function moveTo(program, fromPath, toParentPath, toIndex, limits = DEFAULT_LIMIT
     return { ok: false, reason: '目標位置不是有效的容器', program };
   }
 
-  const check = canInsert(program, toParentPath, moving.name === 'repeat', limits);
-  if (!check.ok) return { ok: false, reason: check.reason, program };
-
   // 同一個容器？比對「來源的父路徑」與目標父路徑，不是比對路徑長度
   const fromParent = fromPath.slice(0, -1);
   const sameParent =
     fromParent.length === toParentPath.length &&
     fromParent.every((v, i) => v === toParentPath[i]);
+
+  // ⚠️ 同容器內搬移只是「換順序」，格子數根本沒變 → 不能套容量檢查。
+  //    關卡的格數都設得很緊（參考解 +1~2），所以主程式幾乎永遠是滿的；
+  //    若在這裡檢查，玩家連「把第 1 個積木拖到第 3 個位置」都會被擋，
+  //    編輯器等於不能用。只有「跨容器」（數量真的會增加）才要檢查。
+  if (!sameParent) {
+    const check = canInsert(program, toParentPath, moving.name === 'repeat', limits);
+    if (!check.ok) return { ok: false, reason: check.reason, program };
+  }
 
   let next = removeAt(program, fromPath);
   const parent = adjustPathAfterRemoval(toParentPath, fromPath);
@@ -1918,7 +1931,8 @@ class Editor {
       el.addEventListener('dragend', () => {
         el.classList.remove('ed-dragging');
         this.dragFrom = null;
-        this.$program.querySelectorAll('.ed-dropok').forEach((n) => n.classList.remove('ed-dropok'));
+        this.$program.querySelectorAll('.ed-dropok, .ed-drop-before')
+          .forEach((n) => n.classList.remove('ed-dropok', 'ed-drop-before'));
       });
     });
 
@@ -1928,13 +1942,20 @@ class Editor {
         if (this.dragFrom === null) return;
         e.preventDefault();
         e.stopPropagation();
+        // 拖到「積木」上 = 插在它前面 → 用上方一條插入線表示位置。
+        // 只框住整列的話，看不出來是「插在前面」還是「取代它」。
+        el.classList.toggle('ed-drop-before', el.dataset.kind === 'block');
         el.classList.add('ed-dropok');
       });
-      el.addEventListener('dragleave', () => el.classList.remove('ed-dropok'));
+      el.addEventListener('dragleave', () => {
+        el.classList.remove('ed-dropok');
+        el.classList.remove('ed-drop-before');
+      });
       el.addEventListener('drop', (e) => {
         e.preventDefault();
         e.stopPropagation();
         el.classList.remove('ed-dropok');
+        el.classList.remove('ed-drop-before');
         if (this.dragFrom === null) return;
         const target = this.dropTargetFor(el);
         if (target) this.applyMove(this.dragFrom, target.parentPath, target.index);
