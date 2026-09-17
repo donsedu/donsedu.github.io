@@ -263,7 +263,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/analytics.js, js/editor.js, js/main.js
-   建置：2026-09-17T01:21:24.910Z
+   建置：2026-09-17T01:23:52.420Z
 */
 (function () {
 'use strict';
@@ -2307,7 +2307,7 @@ function save() {
 }
 
 /** 記錄一個事件（只是排進佇列，不會馬上送） */
-function track(name) {
+function statsTrack(name) {
   if (!enabled()) return;
   if (typeof name !== 'string' || name.length > 24) return;
   queue.push(name);
@@ -2315,19 +2315,19 @@ function track(name) {
 }
 
 /** 第一次來 vs 回訪（只送「有回訪」這一個計數，不送任何識別碼） */
-function trackVisit() {
+function statsVisit() {
   if (!enabled()) return;
   let seen = false;
   try {
     seen = localStorage.getItem(SEEN_KEY) === '1';
     localStorage.setItem(SEEN_KEY, '1');
   } catch { /* 忽略 */ }
-  track('open');
-  if (seen) track('return');
+  statsTrack('open');
+  if (seen) statsTrack('return');
 }
 
 /** 把佇列送出去。用 sendBeacon，頁面關掉時也能送達。 */
-function flush() {
+function statsFlush() {
   if (!enabled() || !queue.length) return;
 
   const payload = JSON.stringify({ e: queue });
@@ -2358,20 +2358,20 @@ function flush() {
     .catch(() => { /* 保持排隊 */ });
 }
 
-function init() {
+function statsInit() {
   if (!enabled()) return;
   load();
   trackVisit();
 
   // 頁面被隱藏或關閉時送（手機上切換 app 也會觸發 visibilitychange）
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flush();
+    if (document.visibilityState === 'hidden') statsFlush();
   });
-  window.addEventListener('pagehide', flush);
-  window.addEventListener('beforeunload', flush);
+  window.addEventListener('pagehide', statsFlush);
+  window.addEventListener('beforeunload', statsFlush);
 
   // 保險：玩超過 3 分鐘就送一次，避免長時間遊玩中途當機而全失
-  setInterval(flush, 180000);
+  setInterval(statsFlush, 180000);
 }
 
 
@@ -2973,7 +2973,7 @@ function loadLevel(index) {
   stopTimer();
   curIndex = index;
   // 匿名統計：記「第 N 關開始玩」。不送任何識別資訊，只是一個計數器 +1。
-  track(`lv:${index + 1}:start`);
+  statsTrack(`lv:${index + 1}:start`);
   level = LEVELS[index];
   selLevel.value = String(index);
   setSolved(false);
@@ -3151,8 +3151,8 @@ function finish() {
   if (interp.status === STATUS.WON) {
     const medal = interp.medal(level.medals);
     // 匿名統計：這一關過關了、拿到什麼牌。用來算「孩子卡在第幾關」。
-    track(`lv:${curIndex + 1}:win`);
-    if (medal) track(`m:${medal}`);
+    statsTrack(`lv:${curIndex + 1}:win`);
+    if (medal) statsTrack(`m:${medal}`);
 
     const lines = [];
     if (medal) {
@@ -3270,8 +3270,8 @@ window.addEventListener('orientationchange', () => {
 
 // 開發用
 // ── 匿名使用統計（可關：localStorage 設 rp_noanalytics=1，或網址加 ?nolog）──
-initAnalytics();
-window.addEventListener('pagehide', () => flushAnalytics());
+statsInit();
+window.addEventListener('pagehide', () => statsFlush());
 
 // ── PWA：註冊 service worker（只在 http/https 下註冊；
 //    單檔離線版是 file:// 開啟，註冊會失敗，直接跳過）──
