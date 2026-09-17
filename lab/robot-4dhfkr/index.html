@@ -262,8 +262,8 @@
 
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
-   來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/editor.js, js/main.js
-   建置：2026-09-16T22:52:02.937Z
+   來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/analytics.js, js/editor.js, js/main.js
+   建置：2026-09-17T01:21:24.910Z
 */
 (function () {
 'use strict';
@@ -2257,6 +2257,124 @@ function alternativeSolutionFeedback(level, program) {
 }
 
 
+// ══════════ js/analytics.js ══════════
+/**
+ * 匿名使用統計（客戶端）
+ *
+ * 只送「事件名稱」，不送任何可識別資訊：
+ *   - 不寫 cookie
+ *   - 不產生使用者／裝置／session 識別碼
+ *   - 不送 IP（Worker 端也不記）、不送 User-Agent、不送座標、不送時間戳
+ * 送到同源端點 api/track（dons.tw 上的 Cloudflare Worker），
+ * Worker 只是把整數計數器 +1。
+ *
+ * 為什麼要離線排隊：這是 PWA，小孩很可能在沒網路的狀況下玩。
+ * 事件先存在 localStorage，等下次有網路再一起送。
+ *
+ * 關閉方式：localStorage.setItem('rp_noanalytics', '1')
+ *          （或網址加 ?nolog，方便他自己測試時不污染數據）
+ */
+
+const ENDPOINT = 'api/track';
+const QUEUE_KEY = 'rp_stats_q';
+const SEEN_KEY = 'rp_stats_seen';
+const OFF_KEY = 'rp_noanalytics';
+const MAX_QUEUE = 200;      // 排隊上限，避免 localStorage 無限成長
+
+let queue = [];
+
+function enabled() {
+  try {
+    if (localStorage.getItem(OFF_KEY) === '1') return false;
+  } catch { /* 無 localStorage 也要能玩 */ }
+  if (/[?&]nolog\b/.test(location.search)) return false;
+  // 只有 http(s) 才送（單檔離線版是 file://）
+  return /^https?:$/.test(location.protocol);
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY);
+    queue = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(queue)) queue = [];
+  } catch { queue = []; }
+}
+
+function save() {
+  try {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-MAX_QUEUE)));
+  } catch { /* 滿了就算了，不要因此讓遊戲出錯 */ }
+}
+
+/** 記錄一個事件（只是排進佇列，不會馬上送） */
+function track(name) {
+  if (!enabled()) return;
+  if (typeof name !== 'string' || name.length > 24) return;
+  queue.push(name);
+  save();
+}
+
+/** 第一次來 vs 回訪（只送「有回訪」這一個計數，不送任何識別碼） */
+function trackVisit() {
+  if (!enabled()) return;
+  let seen = false;
+  try {
+    seen = localStorage.getItem(SEEN_KEY) === '1';
+    localStorage.setItem(SEEN_KEY, '1');
+  } catch { /* 忽略 */ }
+  track('open');
+  if (seen) track('return');
+}
+
+/** 把佇列送出去。用 sendBeacon，頁面關掉時也能送達。 */
+function flush() {
+  if (!enabled() || !queue.length) return;
+
+  const payload = JSON.stringify({ e: queue });
+  const url = ENDPOINT;
+
+  // sendBeacon 在頁面卸載時仍會送出（fetch 會被取消）
+  let ok = false;
+  try {
+    if (navigator.sendBeacon) ok = navigator.sendBeacon(url, new Blob([payload], { type: 'text/plain' }));
+  } catch { ok = false; }
+
+  if (ok) {
+    queue = [];
+    save();
+    return;
+  }
+
+  // 送不出去（離線、sendBeacon 不支援）→ 留在佇列，下次再試
+  fetch(url, {
+    method: 'POST',
+    body: payload,
+    headers: { 'content-type': 'text/plain' },
+    keepalive: true,
+  })
+    .then((res) => {
+      if (res.ok) { queue = []; save(); }
+    })
+    .catch(() => { /* 保持排隊 */ });
+}
+
+function init() {
+  if (!enabled()) return;
+  load();
+  trackVisit();
+
+  // 頁面被隱藏或關閉時送（手機上切換 app 也會觸發 visibilitychange）
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flush();
+  });
+  window.addEventListener('pagehide', flush);
+  window.addEventListener('beforeunload', flush);
+
+  // 保險：玩超過 3 分鐘就送一次，避免長時間遊玩中途當機而全失
+  setInterval(flush, 180000);
+}
+
+
 // ══════════ js/editor.js ══════════
 /**
  * editor.js — 程式編輯器 UI（DOM）
@@ -2854,6 +2972,8 @@ function stopTimer() {
 function loadLevel(index) {
   stopTimer();
   curIndex = index;
+  // 匿名統計：記「第 N 關開始玩」。不送任何識別資訊，只是一個計數器 +1。
+  track(`lv:${index + 1}:start`);
   level = LEVELS[index];
   selLevel.value = String(index);
   setSolved(false);
@@ -3030,6 +3150,10 @@ function finish() {
 
   if (interp.status === STATUS.WON) {
     const medal = interp.medal(level.medals);
+    // 匿名統計：這一關過關了、拿到什麼牌。用來算「孩子卡在第幾關」。
+    track(`lv:${curIndex + 1}:win`);
+    if (medal) track(`m:${medal}`);
+
     const lines = [];
     if (medal) {
       const label = { gold: '金牌', silver: '銀牌', bronze: '銅牌' }[medal];
@@ -3145,6 +3269,10 @@ window.addEventListener('orientationchange', () => {
 });
 
 // 開發用
+// ── 匿名使用統計（可關：localStorage 設 rp_noanalytics=1，或網址加 ?nolog）──
+initAnalytics();
+window.addEventListener('pagehide', () => flushAnalytics());
+
 // ── PWA：註冊 service worker（只在 http/https 下註冊；
 //    單檔離線版是 file:// 開啟，註冊會失敗，直接跳過）──
 if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator
