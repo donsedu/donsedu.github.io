@@ -12,7 +12,7 @@
  * ⚠️ CACHE 版本由 build 腳本依單檔內容的雜湊自動改寫，
  *    所以每次改版都會產生新的快取、舊的會被清掉。
  */
-const CACHE = 'robot-puzzle-e144676e5f';
+const CACHE = 'robot-puzzle-059a26c8d0';
 const SHELL = './index.html';
 // 這些在 install 時就全部抓下來 → 離線開啟時不會缺圖
 const PRECACHE = [

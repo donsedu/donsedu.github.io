@@ -263,7 +263,7 @@
   <script>
 /* 邏輯機器人 — 單檔建置版（自動產生，請勿直接編輯）
    來源：js/world.js, js/engine.js, js/program.js, js/levels.js, js/render.js, js/concepts.js, js/analytics.js, js/editor.js, js/main.js
-   建置：2026-09-17T01:23:52.420Z
+   建置：2026-09-17T01:31:34.884Z
 */
 (function () {
 'use strict';
@@ -2270,6 +2270,8 @@ function alternativeSolutionFeedback(level, program) {
  *
  * 為什麼要離線排隊：這是 PWA，小孩很可能在沒網路的狀況下玩。
  * 事件先存在 localStorage，等下次有網路再一起送。
+ * ⚠️ 只有「伺服器真的回 2xx」才會清掉佇列 —— 送失敗就保留，
+ *    否則在學校網路不穩的教室裡，數據會莫名少一截且查不出原因。
  *
  * 關閉方式：localStorage.setItem('rp_noanalytics', '1')
  *          （或網址加 ?nolog，方便他自己測試時不污染數據）
@@ -2330,38 +2332,31 @@ function statsVisit() {
 function statsFlush() {
   if (!enabled() || !queue.length) return;
 
-  const payload = JSON.stringify({ e: queue });
-  const url = ENDPOINT;
+  // 用 fetch + keepalive，不用 sendBeacon：
+  // sendBeacon 只回報「已排入送出」，不回報成功與否 —— 端點掛掉時
+  // 佇列照樣被清空，事件就安靜地消失了（實測踩過：本機端點 404 但佇列清空）。
+  // fetch + keepalive 一樣能在頁面卸載時送出，而且拿得到回應。
+  const sent = queue.slice();
 
-  // sendBeacon 在頁面卸載時仍會送出（fetch 會被取消）
-  let ok = false;
-  try {
-    if (navigator.sendBeacon) ok = navigator.sendBeacon(url, new Blob([payload], { type: 'text/plain' }));
-  } catch { ok = false; }
-
-  if (ok) {
-    queue = [];
-    save();
-    return;
-  }
-
-  // 送不出去（離線、sendBeacon 不支援）→ 留在佇列，下次再試
-  fetch(url, {
+  fetch(ENDPOINT, {
     method: 'POST',
-    body: payload,
+    body: JSON.stringify({ e: sent }),
     headers: { 'content-type': 'text/plain' },
     keepalive: true,
   })
     .then((res) => {
-      if (res.ok) { queue = []; save(); }
+      if (!res.ok) return;                     // 失敗 → 留在佇列，下次再試
+      // 只移除「這次真的送出去的那一批」，期間新增的事件要保留
+      queue = queue.slice(sent.length);
+      save();
     })
-    .catch(() => { /* 保持排隊 */ });
+    .catch(() => { /* 離線 → 保持排隊 */ });
 }
 
 function statsInit() {
   if (!enabled()) return;
   load();
-  trackVisit();
+  statsVisit();
 
   // 頁面被隱藏或關閉時送（手機上切換 app 也會觸發 visibilitychange）
   document.addEventListener('visibilitychange', () => {
