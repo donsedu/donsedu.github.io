@@ -268,6 +268,9 @@ body {
 .post-body h2 { font-size: 22px; font-weight: 900; margin: 28px 0 12px; }
 .post-body ul, .post-body ol { margin: 0 0 18px 26px; }
 .post-body li { margin-bottom: 6px; font-size: 16px; }
+.post-body figure { margin: 4px 0 24px; }
+.post-body img { display: block; width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--cream-3); }
+.post-body figcaption { font-size: 13.5px; color: #a08b7a; margin-top: 8px; line-height: 1.6; }
 .post-back { display: inline-block; margin-bottom: 20px; color: var(--orange-dark); text-decoration: none; font-weight: 700; }
 
 /* 延伸閱讀（blockquote）美化 */

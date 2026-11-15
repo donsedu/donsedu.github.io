@@ -2,11 +2,23 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://dons.tw/</loc>
-    <lastmod>2026-09-10T00:00:00.000Z</lastmod>
+    <lastmod>2026-11-15T00:00:00.000Z</lastmod>
   </url>
   <url>
     <loc>https://dons.tw/blog/</loc>
-    <lastmod>2026-09-10T00:00:00.000Z</lastmod>
+    <lastmod>2026-11-15T00:00:00.000Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dons.tw/blog/2026-11-15-following-instructions-only/</loc>
+    <lastmod>2026-11-15T00:00:00.000Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dons.tw/blog/2026-11-15-how-to-tell-progress/</loc>
+    <lastmod>2026-11-15T00:00:00.000Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dons.tw/blog/2026-11-15-lego-vs-coding-vs-robot/</loc>
+    <lastmod>2026-11-15T00:00:00.000Z</lastmod>
   </url>
   <url>
     <loc>https://dons.tw/blog/2026-09-10-lego-9686-course-content/</loc>
